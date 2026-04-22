@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub Token Sync</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #1e1e1e;
+      background: #fff;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #e5e5e5;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      color: #999;
+      transition: color .15s, border-color .15s;
+    }
+    .tab.active {
+      color: #0d99ff;
+      border-bottom-color: #0d99ff;
+    }
+    .tab:hover:not(.active) { color: #333; }
+
+    /* ── Layout ── */
+    .panel { padding: 16px; }
+
+    .field + .field { margin-top: 12px; }
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    input, select {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 12px;
+      background: #fafafa;
+      transition: border-color .15s, box-shadow .15s;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: #0d99ff;
+      box-shadow: 0 0 0 2px rgba(13,153,255,.15);
+      background: #fff;
+    }
+    input[type="password"] { font-family: monospace; letter-spacing: 2px; }
+    input::placeholder { letter-spacing: 0; color: #bbb; font-family: inherit; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s, background .15s;
+    }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-primary { background: #0d99ff; color: #fff; }
+    .btn-primary:not(:disabled):hover { background: #0888e0; }
+    .btn-secondary { background: #f0f0f0; color: #333; }
+    .btn-secondary:not(:disabled):hover { background: #e4e4e4; }
+    .btn-danger { background: #fff0f0; color: #d03030; }
+    .btn-danger:not(:disabled):hover { background: #ffe0e0; }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .btn-row .btn { flex: 1; justify-content: center; }
+
+    /* ── Status / Logs ── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: #f7f7f7;
+      border-bottom: 1px solid #e5e5e5;
+      min-height: 40px;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot.idle     { background: #bbb; }
+    .dot.ok       { background: #1abc7c; }
+    .dot.working  { background: #0d99ff; animation: pulse 1s infinite; }
+    .dot.error    { background: #e53e3e; }
+
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: .4; }
+    }
+
+    .status-text { font-size: 12px; color: #555; flex: 1; }
+
+    .log-area {
+      margin: 12px 0 0;
+      padding: 10px 12px;
+      background: #f7f7f7;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 11px;
+      max-height: 180px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      color: #444;
+    }
+    .log-area .log-error { color: #c0392b; }
+    .log-area .log-ok    { color: #27ae60; }
+
+    /* ── Sync cards ── */
+    .sync-card {
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .sync-card + .sync-card { margin-top: 12px; }
+    .sync-card h3 {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .sync-card p {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 10px;
+    }
+
+    /* ── Validation hint ── */
+    .hint {
+      font-size: 11px;
+      color: #888;
+      margin-top: 4px;
+    }
+    .hint.ok    { color: #1abc7c; }
+    .hint.error { color: #e53e3e; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #e5e5e5;
+      margin: 16px 0;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: #aaa;
+      margin-bottom: 10px;
+    }
+
+    .provider-row {
+      display: flex;
+      gap: 8px;
+    }
+    .provider-row select { flex: 1; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+</body>
+</html>
