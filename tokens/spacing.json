@@ -1,36 +1,70 @@
 {
   "$metadata": {
     "collection": "Spacing",
-    "modes": ["Default"]
+    "modes": ["Light", "Dark"]
   },
-  "spacing": {
-    "0": { "$value": 0, "$type": "number", "$description": "No spacing" },
-    "1": { "$value": 4, "$type": "number", "$description": "4px" },
-    "2": { "$value": 8, "$type": "number", "$description": "8px" },
-    "3": { "$value": 12, "$type": "number", "$description": "12px" },
-    "4": { "$value": 16, "$type": "number", "$description": "16px" },
-    "5": { "$value": 20, "$type": "number", "$description": "20px" },
-    "6": { "$value": 24, "$type": "number", "$description": "24px" },
-    "8": { "$value": 32, "$type": "number", "$description": "32px" },
-    "10": { "$value": 40, "$type": "number", "$description": "40px" },
-    "12": { "$value": 48, "$type": "number", "$description": "48px" },
-    "16": { "$value": 64, "$type": "number", "$description": "64px" },
-    "20": { "$value": 80, "$type": "number", "$description": "80px" },
-    "24": { "$value": 96, "$type": "number", "$description": "96px" }
+  "Light": {
+    "spacing": {
+      "0": { "$value": 0, "$type": "number", "$description": "No spacing" },
+      "1": { "$value": 4, "$type": "number", "$description": "4px" },
+      "2": { "$value": 8, "$type": "number", "$description": "8px" },
+      "3": { "$value": 12, "$type": "number", "$description": "12px" },
+      "4": { "$value": 16, "$type": "number", "$description": "16px" },
+      "5": { "$value": 20, "$type": "number", "$description": "20px" },
+      "6": { "$value": 24, "$type": "number", "$description": "24px" },
+      "8": { "$value": 32, "$type": "number", "$description": "32px" },
+      "10": { "$value": 40, "$type": "number", "$description": "40px" },
+      "12": { "$value": 48, "$type": "number", "$description": "48px" },
+      "16": { "$value": 64, "$type": "number", "$description": "64px" },
+      "20": { "$value": 80, "$type": "number", "$description": "80px" },
+      "24": { "$value": 96, "$type": "number", "$description": "96px" }
+    },
+    "radius": {
+      "none": { "$value": 0, "$type": "number" },
+      "sm": { "$value": 4, "$type": "number" },
+      "md": { "$value": 6, "$type": "number" },
+      "lg": { "$value": 8, "$type": "number" },
+      "xl": { "$value": 12, "$type": "number" },
+      "2xl": { "$value": 16, "$type": "number" },
+      "full": { "$value": 9999, "$type": "number" }
+    },
+    "border-width": {
+      "none": { "$value": 0, "$type": "number" },
+      "sm": { "$value": 1, "$type": "number" },
+      "md": { "$value": 2, "$type": "number" },
+      "lg": { "$value": 4, "$type": "number" }
+    }
   },
-  "radius": {
-    "none": { "$value": 0, "$type": "number" },
-    "sm": { "$value": 4, "$type": "number" },
-    "md": { "$value": 6, "$type": "number" },
-    "lg": { "$value": 8, "$type": "number" },
-    "xl": { "$value": 12, "$type": "number" },
-    "2xl": { "$value": 16, "$type": "number" },
-    "full": { "$value": 9999, "$type": "number" }
-  },
-  "border-width": {
-    "none": { "$value": 0, "$type": "number" },
-    "sm": { "$value": 1, "$type": "number" },
-    "md": { "$value": 2, "$type": "number" },
-    "lg": { "$value": 4, "$type": "number" }
+  "Dark": {
+    "spacing": {
+      "0": { "$value": 0, "$type": "number", "$description": "No spacing" },
+      "1": { "$value": 4, "$type": "number", "$description": "4px" },
+      "2": { "$value": 8, "$type": "number", "$description": "8px" },
+      "3": { "$value": 12, "$type": "number", "$description": "12px" },
+      "4": { "$value": 16, "$type": "number", "$description": "16px" },
+      "5": { "$value": 20, "$type": "number", "$description": "20px" },
+      "6": { "$value": 24, "$type": "number", "$description": "24px" },
+      "8": { "$value": 32, "$type": "number", "$description": "32px" },
+      "10": { "$value": 40, "$type": "number", "$description": "40px" },
+      "12": { "$value": 48, "$type": "number", "$description": "48px" },
+      "16": { "$value": 64, "$type": "number", "$description": "64px" },
+      "20": { "$value": 80, "$type": "number", "$description": "80px" },
+      "24": { "$value": 96, "$type": "number", "$description": "96px" }
+    },
+    "radius": {
+      "none": { "$value": 0, "$type": "number" },
+      "sm": { "$value": 4, "$type": "number" },
+      "md": { "$value": 6, "$type": "number" },
+      "lg": { "$value": 8, "$type": "number" },
+      "xl": { "$value": 12, "$type": "number" },
+      "2xl": { "$value": 16, "$type": "number" },
+      "full": { "$value": 9999, "$type": "number" }
+    },
+    "border-width": {
+      "none": { "$value": 0, "$type": "number" },
+      "sm": { "$value": 1, "$type": "number" },
+      "md": { "$value": 2, "$type": "number" },
+      "lg": { "$value": 4, "$type": "number" }
+    }
   }
 }
