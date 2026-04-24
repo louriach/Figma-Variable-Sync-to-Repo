@@ -1,4 +1,4 @@
-# Figma GitHub Token Sync
+# Variable Sync to Repo
 
 A Figma plugin that bi-directionally syncs your Figma variables to and from a JSON file stored in a GitHub, GitLab, or Bitbucket repository. Token files follow the [W3C Design Token Community Group (DTCG)](https://design-tokens.github.io/community-group/format/) specification.
 
@@ -80,7 +80,7 @@ Aliases between variables are stored as W3C references:
 
 ### 1. Install the plugin
 
-Find **Figma GitHub Token Sync** in the [Figma Community](https://www.figma.com/community) and click **Install**.
+Find **Variable Sync to Repo** in the [Figma Community](https://www.figma.com/community) and click **Install**.
 
 ### 2. Create a personal access token
 

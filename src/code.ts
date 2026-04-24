@@ -10,7 +10,7 @@ import type {
   SetVariablesResult,
 } from './types';
 
-figma.showUI(__html__, { width: 420, height: 600, title: 'GitHub Token Sync' });
+figma.showUI(__html__, { width: 420, height: 600, title: 'Variable Sync to Repo' });
 
 // ─── Settings ────────────────────────────────────────────────────────────────
 

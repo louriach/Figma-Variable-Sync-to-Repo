@@ -1,6 +1,6 @@
 {
-  "name": "Figma GitHub Token Sync",
-  "id": "figma-github-token-sync",
+  "name": "Variable Sync to Repo",
+  "id": "variable-sync-to-repo",
   "api": "1.0.0",
   "main": "dist/code.js",
   "ui": "dist/ui.html",

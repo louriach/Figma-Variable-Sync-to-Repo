@@ -1,5 +1,5 @@
 {
-  "name": "figma-github-token-sync",
+  "name": "variable-sync-to-repo",
   "version": "1.0.0",
   "description": "Bi-directionally sync Figma variables with a GitHub/GitLab JSON token file (W3C DTCG format)",
   "scripts": {

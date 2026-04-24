@@ -381,7 +381,7 @@ export default function App() {
               <div className="welcome-reset-banner">All saved data cleared.</div>
             )}
 
-            <div className="welcome-eyebrow">GitHub Token Sync</div>
+            <div className="welcome-eyebrow">Variable Sync to Repo</div>
 
             <div className="welcome-visual">
               <div className="welcome-video">
