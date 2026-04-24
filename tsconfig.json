@@ -6,9 +6,10 @@
     "moduleResolution": "node",
     "jsx": "react",
     "strict": true,
+    "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "typeRoots": ["./node_modules/@types", "./node_modules/@figma/plugin-typings"]
+    "typeRoots": ["./node_modules/@types"]
   },
   "include": ["src/**/*"]
 }

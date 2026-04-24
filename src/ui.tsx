@@ -412,20 +412,14 @@ export default function App() {
                   Bitbucket
                 </span>
               </div>
-              <p className="welcome-desc">Keep your design tokens in sync across Figma and your codebase — no manual copying, no drift.</p>
-            </div>
-
-            <div className="welcome-chips">
-              <span className="welcome-chip">↑ Push to {providerLabel}</span>
-              <span className="welcome-chip">↓ Pull to Figma</span>
-              <span className="welcome-chip">W3C tokens</span>
+              <p className="welcome-desc">Push variables from Figma to your repo, or pull them back — all as W3C design tokens, with no manual copying.</p>
             </div>
 
             <div className="welcome-cta">
               <button className="btn btn-primary btn-full" onClick={scrollToSetup}>
                 Get started
               </button>
-              <p className="welcome-security">Your token is stored locally in Figma only — never on our servers.</p>
+              <p className="welcome-security">Your variables are stored locally in Figma only, never on our servers.</p>
             </div>
           </section>
 
