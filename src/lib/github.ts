@@ -121,7 +121,7 @@ export class GitHubProvider implements GitProvider {
   }
 
   async listFiles(dirPath: string): Promise<FileEntry[]> {
-    const path = dirPath.replace(/\/$/, '');
+    const path = dirPath.replace(/\/$/, '').split('/').map(encodeURIComponent).join('/');
     const res = await fetch(
       `${this.base}/repos/${this.ownerEnc}/${this.repoEnc}/contents/${path}?ref=${this.branchEnc}`,
       { headers: this.headers() }
@@ -140,8 +140,9 @@ export class GitHubProvider implements GitProvider {
   }
 
   async getFile(filePath: string): Promise<FileContent | null> {
+    const encodedPath = filePath.split('/').map(encodeURIComponent).join('/');
     const res = await fetch(
-      `${this.base}/repos/${this.ownerEnc}/${this.repoEnc}/contents/${filePath}?ref=${this.branchEnc}`,
+      `${this.base}/repos/${this.ownerEnc}/${this.repoEnc}/contents/${encodedPath}?ref=${this.branchEnc}`,
       { headers: this.headers() }
     );
     if (res.status === 404) return null;

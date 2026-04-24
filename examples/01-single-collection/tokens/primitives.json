@@ -1,0 +1,53 @@
+{
+  "color": {
+    "blue": {
+      "100": { "$value": "#dbeafe", "$type": "color" },
+      "300": { "$value": "#93c5fd", "$type": "color" },
+      "500": { "$value": "#3b82f6", "$type": "color" },
+      "700": { "$value": "#1d4ed8", "$type": "color" },
+      "900": { "$value": "#1e3a5f", "$type": "color" }
+    },
+    "neutral": {
+      "0":   { "$value": "#ffffff", "$type": "color" },
+      "100": { "$value": "#f5f5f5", "$type": "color" },
+      "300": { "$value": "#d4d4d4", "$type": "color" },
+      "500": { "$value": "#737373", "$type": "color" },
+      "700": { "$value": "#404040", "$type": "color" },
+      "900": { "$value": "#171717", "$type": "color" }
+    },
+    "red": {
+      "100": { "$value": "#fee2e2", "$type": "color" },
+      "500": { "$value": "#ef4444", "$type": "color" },
+      "700": { "$value": "#b91c1c", "$type": "color" }
+    },
+    "green": {
+      "100": { "$value": "#dcfce7", "$type": "color" },
+      "500": { "$value": "#22c55e", "$type": "color" },
+      "700": { "$value": "#15803d", "$type": "color" }
+    }
+  },
+  "spacing": {
+    "xs":  { "$value": 4,  "$type": "number" },
+    "sm":  { "$value": 8,  "$type": "number" },
+    "md":  { "$value": 16, "$type": "number" },
+    "lg":  { "$value": 24, "$type": "number" },
+    "xl":  { "$value": 32, "$type": "number" },
+    "2xl": { "$value": 48, "$type": "number" }
+  },
+  "radius": {
+    "sm":   { "$value": 4,    "$type": "number" },
+    "md":   { "$value": 8,    "$type": "number" },
+    "lg":   { "$value": 12,   "$type": "number" },
+    "full": { "$value": 9999, "$type": "number" }
+  },
+  "font": {
+    "size": {
+      "xs":  { "$value": 11, "$type": "number" },
+      "sm":  { "$value": 12, "$type": "number" },
+      "md":  { "$value": 14, "$type": "number" },
+      "lg":  { "$value": 16, "$type": "number" },
+      "xl":  { "$value": 20, "$type": "number" },
+      "2xl": { "$value": 24, "$type": "number" }
+    }
+  }
+}

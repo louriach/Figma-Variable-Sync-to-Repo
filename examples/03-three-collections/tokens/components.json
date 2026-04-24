@@ -1,0 +1,45 @@
+{
+  "button": {
+    "background": {
+      "default":  { "$value": "{color.brand.default}", "$type": "color" },
+      "hover":    { "$value": "{color.brand.strong}",  "$type": "color" },
+      "disabled": { "$value": "{color.surface.muted}", "$type": "color" }
+    },
+    "text": {
+      "default":  { "$value": "{color.surface.default}", "$type": "color" },
+      "disabled": { "$value": "{color.text.muted}",      "$type": "color" }
+    },
+    "padding": {
+      "x": { "$value": "{space.inset.md}", "$type": "number" },
+      "y": { "$value": "{space.inset.sm}", "$type": "number" }
+    },
+    "radius":   { "$value": "{radius.interactive}", "$type": "number" },
+    "font": {
+      "size":   { "$value": "{font.label.size}",   "$type": "number" },
+      "weight": { "$value": "{font.label.weight}", "$type": "number" }
+    }
+  },
+  "input": {
+    "background": { "$value": "{color.surface.default}", "$type": "color" },
+    "border": {
+      "default": { "$value": "{color.text.muted}",    "$type": "color" },
+      "focus":   { "$value": "{color.brand.default}", "$type": "color" },
+      "danger":  { "$value": "{color.feedback.danger}", "$type": "color" }
+    },
+    "text": {
+      "default":     { "$value": "{color.text.default}", "$type": "color" },
+      "placeholder": { "$value": "{color.text.muted}",   "$type": "color" }
+    },
+    "padding": {
+      "x": { "$value": "{space.inset.md}", "$type": "number" },
+      "y": { "$value": "{space.inset.sm}", "$type": "number" }
+    },
+    "radius": { "$value": "{radius.interactive}", "$type": "number" }
+  },
+  "card": {
+    "background": { "$value": "{color.surface.default}", "$type": "color" },
+    "padding":    { "$value": "{space.inset.lg}",        "$type": "number" },
+    "radius":     { "$value": "{radius.card}",           "$type": "number" },
+    "gap":        { "$value": "{space.gap.md}",          "$type": "number" }
+  }
+}

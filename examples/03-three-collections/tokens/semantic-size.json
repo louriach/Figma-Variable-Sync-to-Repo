@@ -1,0 +1,38 @@
+{
+  "space": {
+    "inset": {
+      "sm": { "$value": "{spacing.sm}", "$type": "number" },
+      "md": { "$value": "{spacing.md}", "$type": "number" },
+      "lg": { "$value": "{spacing.lg}", "$type": "number" }
+    },
+    "gap": {
+      "sm": { "$value": "{spacing.xs}", "$type": "number" },
+      "md": { "$value": "{spacing.sm}", "$type": "number" },
+      "lg": { "$value": "{spacing.md}", "$type": "number" }
+    },
+    "stack": {
+      "sm": { "$value": "{spacing.sm}", "$type": "number" },
+      "md": { "$value": "{spacing.md}", "$type": "number" },
+      "lg": { "$value": "{spacing.xl}", "$type": "number" }
+    }
+  },
+  "radius": {
+    "interactive": { "$value": "{radius.md}",   "$type": "number" },
+    "card":        { "$value": "{radius.md}",   "$type": "number" },
+    "pill":        { "$value": "{radius.full}", "$type": "number" }
+  },
+  "font": {
+    "body": {
+      "size":   { "$value": "{font.size.md}", "$type": "number" },
+      "weight": { "$value": "{font.weight.regular}", "$type": "number" }
+    },
+    "label": {
+      "size":   { "$value": "{font.size.sm}", "$type": "number" },
+      "weight": { "$value": "{font.weight.semibold}", "$type": "number" }
+    },
+    "heading": {
+      "size":   { "$value": "{font.size.lg}", "$type": "number" },
+      "weight": { "$value": "{font.weight.semibold}", "$type": "number" }
+    }
+  }
+}

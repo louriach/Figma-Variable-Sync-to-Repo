@@ -70,8 +70,20 @@ async function applyVariables(
 
   const colByName = new Map(existingCollections.map((c) => [c.name, c]));
   const varByKey = new Map(existingVariables.map((v) => [`${v.variableCollectionId}::${v.name}`, v]));
-  const varById = new Map(existingVariables.map((v) => [v.id, v]));
 
+  // Maps imported placeholder IDs to real Figma variable IDs
+  const importedIdToFigmaId = new Map<string, string>();
+
+  type ColContext = {
+    col: VariableCollection;
+    remoteModeIdToLocal: Map<string, string>;
+    rawVars: RawVariable[];
+  };
+  const contexts: ColContext[] = [];
+
+  // Pass 1: create all collections, modes, and variables across every collection
+  // before setting any values — ensures aliases can always resolve their targets
+  // regardless of collection order or same-collection forward references.
   for (const rawCol of collections) {
     let col = colByName.get(rawCol.name);
     if (!col) {
@@ -79,7 +91,6 @@ async function applyVariables(
       colByName.set(rawCol.name, col);
     }
 
-    // Reconcile modes
     const modeByName = new Map(col.modes.map((m) => [m.name, m.modeId]));
     for (const rawMode of rawCol.modes) {
       if (!modeByName.has(rawMode.name)) {
@@ -88,7 +99,6 @@ async function applyVariables(
       }
     }
 
-    // Ensure the mode ID mapping uses the *current* col modes (post-creation)
     const remoteModeIdToLocal = new Map<string, string>();
     for (const rawMode of rawCol.modes) {
       const localId = modeByName.get(rawMode.name);
@@ -108,7 +118,6 @@ async function applyVariables(
         try {
           variable = figma.variables.createVariable(rawVar.name, col, figmaType);
           varByKey.set(key, variable);
-          varById.set(variable.id, variable);
           result.created++;
         } catch (e) {
           result.errors.push(`Create "${rawVar.name}": ${e}`);
@@ -119,6 +128,19 @@ async function applyVariables(
       }
 
       if (rawVar.description) variable.description = rawVar.description;
+      importedIdToFigmaId.set(rawVar.id, variable.id);
+    }
+
+    contexts.push({ col, remoteModeIdToLocal, rawVars: rawCol.variables });
+  }
+
+  // Pass 2: set all values now that every variable exists.
+  // Alias chains of any depth (A→B→C) work because Figma resolves them natively;
+  // we only need each variable to point at its direct target.
+  for (const { col, remoteModeIdToLocal, rawVars } of contexts) {
+    for (const rawVar of rawVars) {
+      const variable = varByKey.get(`${col.id}::${rawVar.name}`);
+      if (!variable) continue;
 
       for (const [remoteModeId, rawValue] of Object.entries(rawVar.valuesByMode)) {
         const localModeId = remoteModeIdToLocal.get(remoteModeId);
@@ -126,13 +148,14 @@ async function applyVariables(
 
         let figmaValue: VariableValue;
 
-        if (rawValue && typeof rawValue === 'object' && 'type' in rawValue && (rawValue as RawVariableValue).type === 'alias') {
-          const refVar = varById.get((rawValue as RawVariableValue).id);
-          if (!refVar) {
+        if (rawValue && typeof rawValue === 'object' && 'type' in rawValue &&
+            (rawValue as RawVariableValue).type === 'alias') {
+          const realId = importedIdToFigmaId.get((rawValue as RawVariableValue).id);
+          if (!realId) {
             result.errors.push(`Cannot resolve alias for "${rawVar.name}"`);
             continue;
           }
-          figmaValue = { type: 'VARIABLE_ALIAS', id: refVar.id };
+          figmaValue = { type: 'VARIABLE_ALIAS', id: realId };
         } else {
           figmaValue = rawValue as VariableValue;
         }
@@ -164,6 +187,12 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
       break;
     }
 
+    case 'RESET_SETTINGS': {
+      await figma.clientStorage.deleteAsync('settings');
+      figma.ui.postMessage({ type: 'RESET_COMPLETE' });
+      break;
+    }
+
     case 'GET_VARIABLES': {
       try {
         const collections = await readVariables();
@@ -181,6 +210,11 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
       } catch (e) {
         figma.ui.postMessage({ type: 'ERROR', payload: String(e) });
       }
+      break;
+    }
+
+    case 'OPEN_URL': {
+      figma.openExternal(msg.payload as string);
       break;
     }
   }

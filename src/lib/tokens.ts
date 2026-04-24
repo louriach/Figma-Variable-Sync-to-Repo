@@ -20,7 +20,7 @@ import type {
   RawVariable,
   ScalarValue,
   RawVariableValue,
-  SetVariablesResult,
+  FileDiff,
 } from '../types';
 
 // ─── Figma → Tokens ──────────────────────────────────────────────────────────
@@ -272,6 +272,52 @@ export function tokenFilesToCollections(
   return collections;
 }
 
+// ─── Diff ─────────────────────────────────────────────────────────────────────
+
+function flattenToValueMap(file: TokenFile): Map<string, string | number | boolean> {
+  const map = new Map<string, string | number | boolean>();
+  const metadata = file.$metadata as { modes?: string[] } | undefined;
+  const modes = metadata?.modes ?? [];
+
+  if (modes.length > 1) {
+    for (const mode of modes) {
+      const group = (file as Record<string, unknown>)[mode] as TokenGroup | undefined;
+      if (!group) continue;
+      for (const { path, token } of flattenGroup(group)) {
+        map.set(`${mode}::${path.join('/')}`, token.$value as string | number | boolean);
+      }
+    }
+  } else {
+    for (const { path, token } of flattenGroup(file as unknown as TokenGroup)) {
+      map.set(path.join('/'), token.$value as string | number | boolean);
+    }
+  }
+  return map;
+}
+
+export function diffTokenFiles(
+  remoteFiles: Record<string, TokenFile>,
+  localFiles: Record<string, TokenFile>
+): FileDiff[] {
+  return Object.entries(remoteFiles).map(([fileName, remoteFile]) => {
+    const localFile = localFiles[fileName];
+    const remote = flattenToValueMap(remoteFile);
+    const local = localFile ? flattenToValueMap(localFile) : new Map<string, string | number | boolean>();
+
+    let added = 0, updated = 0, removed = 0;
+
+    for (const [path, value] of remote) {
+      if (!local.has(path)) added++;
+      else if (JSON.stringify(local.get(path)) !== JSON.stringify(value)) updated++;
+    }
+    for (const path of local.keys()) {
+      if (!remote.has(path)) removed++;
+    }
+
+    return { fileName, added, updated, removed, hasChanges: added + updated + removed > 0 };
+  });
+}
+
 function tokenTypeToFigma(type: TokenType): 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN' {
   if (type === 'color') return 'COLOR';
   if (type === 'number' || type === 'dimension') return 'FLOAT';
@@ -290,5 +336,3 @@ function resolveRawValue(
   return v as ScalarValue;
 }
 
-// Re-export for convenience
-export type { SetVariablesResult };

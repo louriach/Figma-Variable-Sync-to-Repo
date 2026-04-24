@@ -1,0 +1,35 @@
+{
+  "color": {
+    "blue": {
+      "100": { "$value": "#dbeafe", "$type": "color" },
+      "500": { "$value": "#3b82f6", "$type": "color" },
+      "700": { "$value": "#1d4ed8", "$type": "color" }
+    },
+    "neutral": {
+      "0":   { "$value": "#ffffff", "$type": "color" },
+      "100": { "$value": "#f5f5f5", "$type": "color" },
+      "500": { "$value": "#737373", "$type": "color" },
+      "900": { "$value": "#171717", "$type": "color" }
+    },
+    "red": {
+      "100": { "$value": "#fee2e2", "$type": "color" },
+      "500": { "$value": "#ef4444", "$type": "color" }
+    },
+    "green": {
+      "100": { "$value": "#dcfce7", "$type": "color" },
+      "500": { "$value": "#22c55e", "$type": "color" }
+    }
+  },
+  "spacing": {
+    "xs":  { "$value": 4,  "$type": "number" },
+    "sm":  { "$value": 8,  "$type": "number" },
+    "md":  { "$value": 16, "$type": "number" },
+    "lg":  { "$value": 24, "$type": "number" },
+    "xl":  { "$value": 32, "$type": "number" }
+  },
+  "radius": {
+    "sm":   { "$value": 4,    "$type": "number" },
+    "md":   { "$value": 8,    "$type": "number" },
+    "full": { "$value": 9999, "$type": "number" }
+  }
+}

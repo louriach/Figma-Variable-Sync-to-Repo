@@ -3,11 +3,14 @@
 export type MessageType =
   | 'GET_SETTINGS'
   | 'SAVE_SETTINGS'
+  | 'RESET_SETTINGS'
+  | 'RESET_COMPLETE'
   | 'GET_VARIABLES'
   | 'SET_VARIABLES'
   | 'SETTINGS_DATA'
   | 'VARIABLES_DATA'
   | 'SET_VARIABLES_RESULT'
+  | 'OPEN_URL'
   | 'ERROR';
 
 export interface PluginMessage {
@@ -17,12 +20,11 @@ export interface PluginMessage {
 
 // ─── Settings ───────────────────────────────────────────────────────────────
 
-export type Provider = 'github' | 'gitlab';
+export type Provider = 'github' | 'gitlab' | 'bitbucket';
 
 export interface Settings {
   provider: Provider;
   token: string;
-  /** Display name of the authenticated user, stored after OAuth/PAT validation */
   connectedLogin: string;
   owner: string;
   repo: string;
@@ -39,15 +41,6 @@ export const DEFAULT_SETTINGS: Settings = {
   branch: 'main',
   tokensPath: 'tokens/',
 };
-
-// ─── OAuth Device Flow UI state ──────────────────────────────────────────────
-
-export type OAuthStatus =
-  | { kind: 'idle' }
-  | { kind: 'requesting' }
-  | { kind: 'pending'; userCode: string; verificationUri: string; expiresAt: number }
-  | { kind: 'polling' }
-  | { kind: 'error'; message: string };
 
 // ─── W3C DTCG Token Format ──────────────────────────────────────────────────
 
@@ -117,4 +110,14 @@ export interface SetVariablesResult {
   created: number;
   updated: number;
   errors: string[];
+}
+
+// ─── Pull diff ───────────────────────────────────────────────────────────────
+
+export interface FileDiff {
+  fileName: string;
+  added: number;
+  updated: number;
+  removed: number;
+  hasChanges: boolean;
 }

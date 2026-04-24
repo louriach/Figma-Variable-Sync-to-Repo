@@ -8,9 +8,9 @@
   "permissions": ["currentuser"],
   "networkAccess": {
     "allowedDomains": [
-      "https://github.com",
       "https://api.github.com",
-      "https://gitlab.com"
+      "https://gitlab.com",
+      "https://api.bitbucket.org"
     ]
   }
 }

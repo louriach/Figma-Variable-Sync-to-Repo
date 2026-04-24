@@ -1,0 +1,38 @@
+{
+  "color": {
+    "brand": {
+      "default": { "$value": "{color.blue.500}", "$type": "color" },
+      "subtle":  { "$value": "{color.blue.100}", "$type": "color" },
+      "strong":  { "$value": "{color.blue.700}", "$type": "color" }
+    },
+    "surface": {
+      "default": { "$value": "{color.neutral.0}",   "$type": "color" },
+      "muted":   { "$value": "{color.neutral.100}", "$type": "color" }
+    },
+    "text": {
+      "default": { "$value": "{color.neutral.900}", "$type": "color" },
+      "muted":   { "$value": "{color.neutral.500}", "$type": "color" }
+    },
+    "feedback": {
+      "danger":  { "$value": "{color.red.500}",   "$type": "color" },
+      "success": { "$value": "{color.green.500}", "$type": "color" }
+    }
+  },
+  "space": {
+    "inset": {
+      "sm": { "$value": "{spacing.sm}", "$type": "number" },
+      "md": { "$value": "{spacing.md}", "$type": "number" },
+      "lg": { "$value": "{spacing.lg}", "$type": "number" }
+    },
+    "gap": {
+      "sm": { "$value": "{spacing.xs}", "$type": "number" },
+      "md": { "$value": "{spacing.sm}", "$type": "number" },
+      "lg": { "$value": "{spacing.md}", "$type": "number" }
+    }
+  },
+  "radius": {
+    "interactive": { "$value": "{radius.md}",   "$type": "number" },
+    "card":        { "$value": "{radius.md}",   "$type": "number" },
+    "pill":        { "$value": "{radius.full}", "$type": "number" }
+  }
+}
