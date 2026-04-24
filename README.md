@@ -80,10 +80,7 @@ Aliases between variables are stored as W3C references:
 
 ### 1. Install the plugin
 
-1. Clone or download this repository
-2. Run `npm install && npm run build` to generate the `dist/` files
-3. In Figma, go to **Plugins → Development → Import plugin from manifest**
-4. Select the `manifest.json` file
+Find **Figma GitHub Token Sync** in the [Figma Community](https://www.figma.com/community) and click **Install**.
 
 ### 2. Create a personal access token
 
@@ -131,38 +128,38 @@ Downloads all JSON files from your tokens directory and shows a diff — added, 
 
 ---
 
-## Development
+## Want to run this locally?
+
+Some teams prefer to fork and run their own build — for example to customise the token format or add a private provider.
 
 ```bash
+git clone https://github.com/louriach/Figma-Github-token-sync.git
+cd Figma-Github-token-sync
 npm install
-
-# one-off build
-npm run build
-
-# watch mode (rebuilds on save)
-npm run watch
+npm run build        # one-off build → dist/
+npm run watch        # rebuild on save
 ```
 
-Output goes to `dist/`. The plugin `manifest.json` points to `dist/code.js` and `dist/ui.html`.
+Then in Figma: **Plugins → Development → Import plugin from manifest** and select `manifest.json`.
 
 ### Project structure
 
 ```
 src/
-  code.ts          # Figma plugin main thread — reads/writes variables, clientStorage
-  ui.tsx           # React UI — settings, sync, logging
-  ui.html          # HTML shell + styles
-  types.ts         # Shared types (W3C tokens, messages, settings)
+  code.ts        # Figma plugin thread — reads/writes variables, clientStorage
+  ui.tsx         # React UI
+  ui.html        # HTML shell + styles
+  types.ts       # Shared types
   lib/
-    provider.ts    # GitProvider interface
-    github.ts      # GitHub REST API implementation
-    gitlab.ts      # GitLab REST API implementation
-    bitbucket.ts   # Bitbucket REST API implementation
-    tokens.ts      # Figma ↔ W3C DTCG conversion, diff logic
+    provider.ts  # GitProvider interface
+    github.ts    # GitHub implementation
+    gitlab.ts    # GitLab implementation
+    bitbucket.ts # Bitbucket implementation
+    tokens.ts    # Figma ↔ W3C DTCG conversion + diff
 examples/
-  01-single-collection/   # Raw primitives, no aliases
-  02-two-collections/     # Primitives + semantic (one alias level)
-  03-three-collections/   # Primitives + semantic-color + semantic-size + components (two levels, parallel fan-out)
+  01-single-collection/
+  02-two-collections/
+  03-three-collections/
 ```
 
 ---
@@ -178,14 +175,6 @@ The [`examples/`](https://github.com/louriach/Figma-Github-token-sync/tree/main/
 | [`03-three-collections/`](https://github.com/louriach/Figma-Github-token-sync/tree/main/examples/03-three-collections/tokens) | `primitives` + `semantic-color` + `semantic-size` + `components` | Parallel fan-out + two-level alias chain |
 
 To test: commit a `tokens/` folder to your repo, point the plugin at that path, and pull.
-
----
-
-## Roadmap
-
-- [ ] Selective collection sync (choose which files to pull)
-- [ ] GitLab OAuth (Device Authorization Grant)
-- [ ] VS Code extension using the same token format
 
 ---
 
