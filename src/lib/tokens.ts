@@ -21,6 +21,7 @@ import type {
   ScalarValue,
   RawVariableValue,
   FileDiff,
+  DiffEntry,
 } from '../types';
 
 // ─── Figma → Tokens ──────────────────────────────────────────────────────────
@@ -308,17 +309,26 @@ export function diffTokenFiles(
     const remote = flattenToValueMap(remoteFile);
     const local = localFile ? flattenToValueMap(localFile) : new Map<string, string | number | boolean>();
 
-    let added = 0, updated = 0, removed = 0;
+    const entries: DiffEntry[] = [];
 
     for (const [path, value] of remote) {
-      if (!local.has(path)) added++;
-      else if (JSON.stringify(local.get(path)) !== JSON.stringify(value)) updated++;
+      if (!local.has(path)) {
+        entries.push({ path, kind: 'added', newValue: value });
+      } else if (JSON.stringify(local.get(path)) !== JSON.stringify(value)) {
+        entries.push({ path, kind: 'updated', oldValue: local.get(path), newValue: value });
+      }
     }
-    for (const path of local.keys()) {
-      if (!remote.has(path)) removed++;
+    for (const [path, value] of local) {
+      if (!remote.has(path)) {
+        entries.push({ path, kind: 'removed', oldValue: value });
+      }
     }
 
-    return { fileName, added, updated, removed, hasChanges: added + updated + removed > 0 };
+    const added   = entries.filter((e) => e.kind === 'added').length;
+    const updated = entries.filter((e) => e.kind === 'updated').length;
+    const removed = entries.filter((e) => e.kind === 'removed').length;
+
+    return { fileName, added, updated, removed, hasChanges: entries.length > 0, entries };
   });
 }
 

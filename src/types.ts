@@ -128,10 +128,18 @@ export interface OperationRecord {
 
 // ─── Pull diff ───────────────────────────────────────────────────────────────
 
+export interface DiffEntry {
+  path: string;
+  kind: 'added' | 'updated' | 'removed';
+  oldValue?: string | number | boolean;
+  newValue?: string | number | boolean;
+}
+
 export interface FileDiff {
   fileName: string;
   added: number;
   updated: number;
   removed: number;
   hasChanges: boolean;
+  entries: DiffEntry[];
 }

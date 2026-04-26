@@ -555,6 +555,39 @@
     .diff-updated { color: #60a5fa; }
     .diff-added   { color: #4ade80; }
     .diff-removed { color: #f87171; }
+    .diff-file-row--clickable:hover { background: #1e1e1e; border-radius: 4px; }
+    .diff-chevron { color: #555; font-size: 8px; margin-left: 4px; }
+    .diff-entries {
+      background: #111;
+      border-radius: 4px;
+      margin: 2px 0 4px;
+      padding: 4px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+    .diff-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 10px;
+      padding: 2px 0;
+    }
+    .diff-entry-path {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      color: #aaa;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+      min-width: 0;
+    }
+    .diff-entry-value { flex-shrink: 0; font-family: 'SF Mono', 'Fira Code', monospace; }
+    .diff-entry-old { color: #f87171; text-decoration: line-through; }
+    .diff-entry-new { color: #4ade80; }
     .diff-hint {
       margin-top: 12px;
       font-size: 11px;
