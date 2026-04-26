@@ -88,7 +88,7 @@
       letter-spacing: .5px;
     }
 
-    input, select {
+    input:not([type="checkbox"]), select {
       width: 100%;
       padding: 8px 12px;
       border: 1px solid #383838;
@@ -108,7 +108,7 @@
       background-color: #141414;
       padding-right: 32px;
     }
-    input:focus, select:focus { border-color: #fff; }
+    input:not([type="checkbox"]):focus, select:focus { border-color: #fff; }
     input[type="password"] { font-family: monospace; letter-spacing: 2px; }
     input::placeholder { letter-spacing: 0; color: #666; font-family: inherit; }
 
