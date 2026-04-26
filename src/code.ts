@@ -69,6 +69,8 @@ async function applyVariables(
   const existingVariables = await figma.variables.getLocalVariablesAsync();
 
   const colByName = new Map(existingCollections.map((c) => [c.name, c]));
+  // Secondary map keyed on lowercase name for case-insensitive fallback
+  const colByNameCI = new Map(existingCollections.map((c) => [c.name.toLowerCase(), c]));
   const varByKey = new Map(existingVariables.map((v) => [`${v.variableCollectionId}::${v.name}`, v]));
 
   // Maps imported placeholder IDs to real Figma variable IDs
@@ -86,10 +88,15 @@ async function applyVariables(
   // before setting any values — ensures aliases can always resolve their targets
   // regardless of collection order or same-collection forward references.
   for (const rawCol of collections) {
-    let col = colByName.get(rawCol.name);
+    let col = colByName.get(rawCol.name)
+           ?? colByNameCI.get(rawCol.name.toLowerCase());
     const isNewCollection = !col;
     if (!col) {
       col = figma.variables.createVariableCollection(rawCol.name);
+      colByName.set(rawCol.name, col);
+    } else if (col.name !== rawCol.name) {
+      // Rename existing collection to match the canonical casing from the token file
+      col.name = rawCol.name;
       colByName.set(rawCol.name, col);
     }
 
