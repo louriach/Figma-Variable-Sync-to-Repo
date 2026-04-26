@@ -110,6 +110,7 @@ export interface SetVariablesResult {
   created: number;
   updated: number;
   errors: string[];
+  log: string[];
 }
 
 // ─── Pull diff ───────────────────────────────────────────────────────────────

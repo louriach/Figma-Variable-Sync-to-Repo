@@ -339,9 +339,10 @@ export default function App() {
     try {
       const collections = tokenFilesToCollections(pendingPull.files);
       const result = await applyVariables(collections);
-      addLog(`Created ${result.created} variable(s), updated ${result.updated}`, 'ok');
+      result.log.forEach((l) => addLog(l, 'ok'));
       result.errors.forEach((e) => addLog(`  ⚠ ${e}`, 'error'));
-      setStatus(`Applied ${result.created + result.updated} variable(s)`, 'ok');
+      const total = result.created + result.updated;
+      setStatus(`Applied ${total} variable(s) across ${collections.length} collection(s)`, 'ok');
       addLog('Done!', 'ok');
       setPendingPull(null);
     } catch (e) {

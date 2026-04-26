@@ -63,7 +63,7 @@ async function readVariables(): Promise<RawCollection[]> {
 async function applyVariables(
   collections: RawCollection[]
 ): Promise<SetVariablesResult> {
-  const result: SetVariablesResult = { created: 0, updated: 0, errors: [] };
+  const result: SetVariablesResult = { created: 0, updated: 0, errors: [], log: [] };
 
   const existingCollections = await figma.variables.getLocalVariableCollectionsAsync();
   const existingVariables = await figma.variables.getLocalVariablesAsync();
@@ -78,6 +78,7 @@ async function applyVariables(
     col: VariableCollection;
     remoteModeIdToLocal: Map<string, string>;
     rawVars: RawVariable[];
+    colName: string;
   };
   const contexts: ColContext[] = [];
 
@@ -92,7 +93,10 @@ async function applyVariables(
       colByName.set(rawCol.name, col);
     }
 
+    const incomingModeNames = new Set(rawCol.modes.map((m) => m.name));
     const modeByName = new Map(col.modes.map((m) => [m.name, m.modeId]));
+
+    // Add any missing modes (rename the auto-created "Mode 1" for brand-new collections)
     for (let i = 0; i < rawCol.modes.length; i++) {
       const rawMode = rawCol.modes[i];
       if (!modeByName.has(rawMode.name)) {
@@ -109,12 +113,23 @@ async function applyVariables(
       }
     }
 
+    // Remove modes that are no longer in the incoming data (e.g. old Light/Dark
+    // after switching to Compact/Default/Comfortable). Must add new modes first
+    // so Figma always has at least one mode present.
+    for (const mode of col.modes) {
+      if (!incomingModeNames.has(mode.name)) {
+        try { col.removeMode(mode.modeId); } catch { /* ignore */ }
+        modeByName.delete(mode.name);
+      }
+    }
+
     const remoteModeIdToLocal = new Map<string, string>();
     for (const rawMode of rawCol.modes) {
       const localId = modeByName.get(rawMode.name);
       if (localId) remoteModeIdToLocal.set(rawMode.modeId, localId);
     }
 
+    let colCreated = 0, colUpdated = 0;
     for (const rawVar of rawCol.variables) {
       const figmaType: VariableResolvedDataType =
         rawVar.resolvedType === 'COLOR' ? 'COLOR' :
@@ -129,19 +144,24 @@ async function applyVariables(
           variable = figma.variables.createVariable(rawVar.name, col, figmaType);
           varByKey.set(key, variable);
           result.created++;
+          colCreated++;
         } catch (e) {
           result.errors.push(`Create "${rawVar.name}": ${e}`);
           continue;
         }
       } else {
         result.updated++;
+        colUpdated++;
       }
 
       if (rawVar.description) variable.description = rawVar.description;
       importedIdToFigmaId.set(rawVar.id, variable.id);
     }
 
-    contexts.push({ col, remoteModeIdToLocal, rawVars: rawCol.variables });
+    result.log.push(
+      `${isNewCollection ? '✦' : '↻'} ${rawCol.name}: ${colCreated} created, ${colUpdated} updated`
+    );
+    contexts.push({ col, remoteModeIdToLocal, rawVars: rawCol.variables, colName: rawCol.name });
   }
 
   // Pass 2: set all values now that every variable exists.
