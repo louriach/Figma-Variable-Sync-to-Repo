@@ -189,9 +189,11 @@ export function tokenFilesToCollections(
   const nextId = () => `imported-${idCounter++}`;
 
   // Pass 1: build structure, assign placeholder IDs
-  for (const [, file] of Object.entries(files)) {
+  for (const [fileName, file] of Object.entries(files)) {
     const metadata = file.$metadata as { collection?: string; modes?: string[] } | undefined;
-    const colName: string = metadata?.collection ?? 'Imported';
+    const baseName = fileName.replace(/\.json$/i, '');
+    const defaultName = baseName.charAt(0).toUpperCase() + baseName.slice(1).replace(/[-_]/g, ' ');
+    const colName: string = metadata?.collection ?? defaultName;
     const modes: string[] = metadata?.modes ?? [];
 
     const isSingle = modes.length <= 1;

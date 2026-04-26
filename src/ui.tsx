@@ -46,6 +46,7 @@ export default function App() {
   const [logs, setLogs] = useState<LogLine[]>([]);
   const [busy, setBusy] = useState(false);
   const [pendingPull, setPendingPull] = useState<{ files: Record<string, TokenFile>; diffs: FileDiff[] } | null>(null);
+  const [fileSelection, setFileSelection] = useState<{ files: Array<{ name: string; path: string }>; selected: Set<string> } | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
 
   const [resetSuccess, setResetSuccess] = useState(false);
@@ -261,6 +262,7 @@ export default function App() {
     setBusy(true);
     setLogs([]);
     setPendingPull(null);
+    setFileSelection(null);
     setStatus('Listing token files…', 'working');
     try {
       const provider = buildProvider(settings);
@@ -272,9 +274,29 @@ export default function App() {
         setBusy(false);
         return;
       }
-      addLog(`Found ${files.length} file(s)`);
+      addLog(`Found ${files.length} file(s) — choose which to pull`);
+      setFileSelection({ files, selected: new Set(files.map((f) => f.name)) });
+      setStatus('Select files to pull', 'idle');
+    } catch (e) {
+      addLog(e instanceof Error ? e.message : String(e), 'error');
+      setStatus('Pull failed', 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDownloadSelected() {
+    if (!fileSelection) return;
+    const selectedFiles = fileSelection.files.filter((f) => fileSelection.selected.has(f.name));
+    if (selectedFiles.length === 0) return;
+    setBusy(true);
+    setLogs([]);
+    setPendingPull(null);
+    setStatus('Downloading selected files…', 'working');
+    try {
+      const provider = buildProvider(settings);
       const remoteFiles: Record<string, TokenFile> = {};
-      for (const f of files) {
+      for (const f of selectedFiles) {
         setStatus(`Downloading ${f.name}…`, 'working');
         addLog(`← ${f.path}`);
         const fc = await provider.getFile(f.path);
@@ -299,6 +321,7 @@ export default function App() {
           return acc;
         }, {});
       const diffs = diffTokenFiles(remoteFiles, localFiles);
+      setFileSelection(null);
       setPendingPull({ files: remoteFiles, diffs });
       setStatus('Review changes before applying', 'idle');
     } catch (e) {
@@ -573,6 +596,36 @@ export default function App() {
                   {busy ? 'Working…' : 'Pull tokens'}
                 </button>
               </div>
+              {fileSelection && (
+                <div className="diff-panel">
+                  <div className="diff-header">Select files to pull</div>
+                  {fileSelection.files.map((f) => (
+                    <label key={f.name} className="file-select-row">
+                      <input
+                        type="checkbox"
+                        checked={fileSelection.selected.has(f.name)}
+                        onChange={(e) => {
+                          const next = new Set(fileSelection.selected);
+                          if (e.target.checked) next.add(f.name);
+                          else next.delete(f.name);
+                          setFileSelection({ ...fileSelection, selected: next });
+                        }}
+                      />
+                      <span className="diff-file-name">{f.name}</span>
+                    </label>
+                  ))}
+                  <div className="btn-row" style={{ marginTop: 12 }}>
+                    <button
+                      className="btn btn-primary"
+                      disabled={busy || fileSelection.selected.size === 0}
+                      onClick={handleDownloadSelected}
+                    >
+                      Download &amp; compare
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => { setFileSelection(null); setLogs([]); }} disabled={busy}>Cancel</button>
+                  </div>
+                </div>
+              )}
               {pendingPull && (
                 <div className="diff-panel">
                   <div className="diff-header">Changes from remote</div>
