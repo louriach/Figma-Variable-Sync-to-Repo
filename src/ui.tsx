@@ -1047,7 +1047,7 @@ export default function App() {
                 </>
               )}
 
-              <p className="persist-note">Settings are saved locally in Figma — you won't need to reconnect next time.</p>
+              <p className="persist-note" style={{ textAlign: 'left' }}>Settings are saved locally in Figma — you won't need to reconnect next time.</p>
               </div>{/* end page-card */}
 
               <div className="page-card page-card--danger">

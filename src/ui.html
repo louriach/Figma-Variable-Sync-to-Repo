@@ -27,7 +27,7 @@
       grid-template-columns: 1fr auto 1fr;
       align-items: center;
       padding: 8px 16px;
-      border-bottom: 1px solid #555;
+      border-bottom: 0.5px solid #555;
       min-height: 40px;
       gap: 8px;
     }
@@ -92,7 +92,7 @@
       gap: 16px;
       padding: 12px 16px;
       border-radius: 20px;
-      border: 1px solid transparent;
+      border: 0.5px solid transparent;
       cursor: pointer;
       background: transparent;
       text-align: left;
@@ -140,10 +140,11 @@
     /* Content card */
     .page-card {
       background: rgba(255,255,255,.03);
-      border: 1px solid #555;
+      border: 0.5px solid #555;
       border-radius: 24px;
       padding: 16px;
       margin-bottom: 16px;
+      box-shadow: rgba(255,255,255,.1) 0px 1px 1px 0px inset, rgba(50,50,93,.25) 0px 50px 100px -20px, rgba(0,0,0,.3) 0px 30px 60px -30px;
     }
     .page-card--danger {
       background: rgba(248,113,113,.04);
@@ -153,10 +154,10 @@
     /* ── Sync section inside page-card ── */
     .sync-section { margin-bottom: 0; }
     .sync-title {
-      font-size: 13px;
+      font-size: 16px;
       font-weight: 600;
       color: #e5e5e5;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       letter-spacing: -.01em;
     }
     .sync-desc {
@@ -180,7 +181,7 @@
     input:not([type="checkbox"]), select {
       width: 100%;
       padding: 8px 12px;
-      border: 1px solid #555;
+      border: 0.5px solid #555;
       border-radius: 8px;
       font-size: 13px;
       background: #141414;
@@ -218,7 +219,7 @@
     .btn-primary {
       background: #ffffff;
       color: #1c1c1c;
-      border: 1px solid #ffffff;
+      border: 0.5px solid #ffffff;
     }
     .btn-primary:not(:disabled):hover { background: #dddddd; border-color: #dddddd; }
 
@@ -228,7 +229,6 @@
       color: #111;
       border: none;
       justify-content: center;
-      width: 100%;
     }
     .btn-page:not(:disabled):hover { filter: brightness(1.1); }
 
@@ -236,7 +236,7 @@
     .btn-quiet {
       background: rgba(255,255,255,.05);
       color: #ccc;
-      border: 1px solid #555;
+      border: 0.5px solid #555;
       justify-content: center;
     }
     .btn-quiet:not(:disabled):hover { background: rgba(255,255,255,.09); color: #e5e5e5; border-color: #777; }
@@ -245,7 +245,7 @@
     .btn-ghost {
       background: transparent;
       color: #aaa;
-      border: 1px solid #555;
+      border: 0.5px solid #555;
       justify-content: center;
     }
     .btn-ghost:not(:disabled):hover { color: #e5e5e5; border-color: #888; }
@@ -253,7 +253,7 @@
     .btn-secondary {
       background: transparent;
       color: #aaa;
-      border: 1px solid #555;
+      border: 0.5px solid #555;
     }
     .btn-secondary:not(:disabled):hover { background: #2e2e2e; color: #e5e5e5; border-color: #888; }
 
@@ -261,14 +261,12 @@
     .btn-danger {
       background: rgba(248,113,113,.12);
       color: #f87171;
-      border: 1px solid rgba(248,113,113,.45);
+      border: 0.5px solid rgba(248,113,113,.45);
       justify-content: center;
-      width: 100%;
     }
     .btn-danger:not(:disabled):hover { background: rgba(248,113,113,.22); border-color: #f87171; }
 
     .btn-row { display: flex; gap: 8px; margin-top: 16px; }
-    .btn-row .btn { flex: 1; justify-content: center; }
 
     .btn-full { width: 100%; justify-content: center; padding: 12px 16px; font-size: 13px; border-radius: 8px; }
 
@@ -277,7 +275,7 @@
       display: flex; align-items: center; gap: 8px;
       padding: 8px 12px; border-radius: 8px;
       font-size: 12px; margin-bottom: 16px;
-      background: rgba(255,255,255,.04); border: 1px solid #555;
+      background: rgba(255,255,255,.04); border: 0.5px solid #555;
       color: #ccc;
     }
     .inline-status--ok    { background: rgba(74,222,128,.07);  border-color: rgba(74,222,128,.35);  color: #4ade80; }
@@ -289,7 +287,7 @@
       margin: 0 0 16px;
       padding: 12px;
       background: #141414;
-      border: 1px solid #555;
+      border: 0.5px solid #555;
       border-radius: 8px;
       font-family: 'SF Mono', 'Fira Code', monospace;
       font-size: 12px;
@@ -308,7 +306,7 @@
     /* ── Banners ── */
     .notice {
       background: #2a2000;
-      border: 1px solid #f59e0b44;
+      border: 0.5px solid #f59e0b44;
       border-radius: 8px;
       padding: 8px 12px;
       font-size: 13px;
@@ -335,7 +333,7 @@
     .connected-card {
       display: flex; align-items: center; gap: 12px;
       padding: 12px;
-      background: #262626; border: 1px solid #555; border-radius: 8px;
+      background: #262626; border: 0.5px solid #555; border-radius: 8px;
     }
     .connected-avatar {
       width: 32px; height: 32px; border-radius: 50%;
@@ -349,7 +347,7 @@
     .connected-sub  { font-size: 12px; color: #aaa; }
 
     .btn-danger-ghost {
-      background: none; border: 1px solid #555;
+      background: none; border: 0.5px solid #555;
       color: #f87171; border-radius: 8px;
       padding: 4px 8px; font-size: 12px;
       cursor: pointer; transition: background .15s, border-color .15s;
@@ -357,7 +355,7 @@
     .btn-danger-ghost:hover { background: #f8717122; border-color: #f87171; }
 
     /* ── Divider / section ── */
-    .divider { border: none; border-top: 1px solid #555; margin: 16px 0; }
+    .divider { border: none; border-top: 0.5px solid #555; margin: 16px 0; }
 
     .section-title {
       font-size: 11px; font-weight: 600;
@@ -376,12 +374,12 @@
 
     /* ── File picker & diff review panels ── */
     .file-select-panel {
-      background: #141414; border: 1px solid #555;
+      background: #141414; border: 0.5px solid #555;
       border-radius: 16px; padding: 12px; margin-bottom: 16px;
     }
     .file-select-row {
       display: flex; align-items: center; gap: 8px;
-      padding: 8px 0; border-bottom: 1px solid #3a3a3a;
+      padding: 8px 0; border-bottom: 0.5px solid #3a3a3a;
       font-size: 13px; cursor: pointer; color: #e5e5e5;
     }
     .file-select-row:last-of-type { border-bottom: none; }
@@ -440,7 +438,7 @@
     .sheet-body { flex: 1; overflow-y: auto; padding: 8px 20px 16px; }
     .sheet-footer {
       display: flex; gap: 8px;
-      padding: 16px 20px; border-top: 1px solid #555; flex-shrink: 0;
+      padding: 16px 20px; border-top: 0.5px solid #555; flex-shrink: 0;
     }
     .sheet-footer .btn { flex: 1; justify-content: center; }
 
@@ -480,7 +478,7 @@
     .diff-entry-arrow { color: #666; font-size: 11px; }
 
     /* ── Log tab ── */
-    .log-entry { border: 1px solid #555; border-radius: 12px; margin-bottom: 8px; overflow: hidden; }
+    .log-entry { border: 0.5px solid #555; border-radius: 12px; margin-bottom: 8px; overflow: hidden; }
     .log-entry-header {
       width: 100%; display: flex; align-items: center; gap: 8px;
       padding: 8px 12px;
@@ -511,11 +509,11 @@
     .log-entry-revert {
       padding-top: 8px;
       margin-top: 8px;
-      border-top: 1px solid #555;
+      border-top: 0.5px solid #555;
     }
     .btn-revert {
       background: none;
-      border: 1px solid #555;
+      border: 0.5px solid #555;
       color: #aaa;
       border-radius: 6px;
       padding: 4px 10px;
@@ -536,14 +534,14 @@
     .welcome-hero { height: 100vh; display: flex; flex-direction: column; padding: 24px; }
 
     .welcome-reset-banner {
-      background: #1a2e1a; border: 1px solid #4ade8055;
+      background: #1a2e1a; border: 0.5px solid #4ade8055;
       border-radius: 8px; padding: 8px 12px;
       font-size: 13px; color: #4ade80;
       margin-bottom: 16px; text-align: center;
     }
     .welcome-visual { margin-bottom: 24px; }
     .welcome-video {
-      position: relative; border: 1px solid #555;
+      position: relative; border: 0.5px solid #555;
       border-radius: 12px; background: #111;
       height: 176px; display: flex; align-items: center; justify-content: center;
       overflow: hidden; margin-bottom: 8px;
@@ -580,7 +578,7 @@
     .provider-pills { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; padding: 8px 0; }
     .provider-pill {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 8px 12px; border: 1px solid #555;
+      padding: 8px 12px; border: 0.5px solid #555;
       border-radius: 8px; background: #262626;
       font-size: 13px; font-weight: 600; color: #e5e5e5;
       white-space: nowrap; flex-shrink: 0;
@@ -590,11 +588,11 @@
     .welcome-cta { margin-top: auto; padding-top: 24px; }
     .welcome-security { margin-top: 8px; font-size: 12px; color: #aaa; text-align: center; line-height: 1.5; }
 
-    .welcome-setup { min-height: 100vh; padding: 32px 24px; border-top: 1px solid #555; }
+    .welcome-setup { min-height: 100vh; padding: 32px 24px; border-top: 0.5px solid #555; }
     .setup-header { margin-bottom: 24px; }
     .setup-title { font-size: 20px; font-weight: 600; color: #ffffff; letter-spacing: -0.3px; margin-bottom: 8px; }
     .setup-sub { font-size: 13px; color: #aaa; line-height: 1.6; }
-    .setup-divider { border-top: 1px solid #555; margin: 16px 0; }
+    .setup-divider { border-top: 0.5px solid #555; margin: 16px 0; }
     .setup-footer { margin-top: 24px; font-size: 12px; color: #aaa; text-align: center; line-height: 1.6; }
   </style>
 </head>
