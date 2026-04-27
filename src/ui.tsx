@@ -34,7 +34,7 @@ function splitFullName(fullName: string): { owner: string; repo: string } {
 }
 
 type DotState = 'idle' | 'working' | 'ok' | 'error';
-type Tab = 'welcome' | 'push' | 'pull' | 'log' | 'settings';
+type Tab = 'welcome' | 'home' | 'push' | 'pull' | 'log' | 'settings';
 interface LogLine { text: string; kind: 'info' | 'ok' | 'error'; }
 
 // ─── App ─────────────────────────────────────────────────────────────────────
@@ -54,8 +54,6 @@ export default function App() {
   const [fileSelection, setFileSelection] = useState<{ files: Array<{ name: string; path: string }>; selected: Set<string> } | null>(null);
   const pushLogRef = useRef<HTMLDivElement>(null);
   const pullLogRef = useRef<HTMLDivElement>(null);
-  const tabsRef = useRef<HTMLDivElement>(null);
-  const indicatorRef = useRef<HTMLSpanElement>(null);
 
   const [resetSuccess, setResetSuccess] = useState(false);
   const [patValue, setPatValue] = useState('');
@@ -92,14 +90,6 @@ export default function App() {
     if (pullLogRef.current) pullLogRef.current.scrollTop = pullLogRef.current.scrollHeight;
   }, [pullLogs]);
 
-  // Slide the tab indicator to the active tab
-  useEffect(() => {
-    if (!tabsRef.current || !indicatorRef.current) return;
-    const activeTab = tabsRef.current.querySelector<HTMLElement>('.tab.active');
-    if (!activeTab) return;
-    indicatorRef.current.style.left = `${activeTab.offsetLeft}px`;
-    indicatorRef.current.style.width = `${activeTab.offsetWidth}px`;
-  }, [tab]);
 
   const addPushLog = useCallback((text: string, kind: LogLine['kind'] = 'info') => {
     setPushLogs((prev) => [...prev, { text, kind }]);
@@ -124,7 +114,7 @@ export default function App() {
           setSettings(s);
           if (s.owner && s.repo) setRepoFullName(`${s.owner}/${s.repo}`);
           if (s.token && s.owner && s.repo && s.branch) {
-            setTab('push');
+            setTab('home');
           } else if (s.token) {
             setTab('settings');
           }
@@ -140,6 +130,11 @@ export default function App() {
         setStatusText('Ready');
         setResetSuccess(true);
         setTab('welcome');
+        // clear any sub-screen state
+        setPushLogs([]);
+        setPullLogs([]);
+        setPendingPull(null);
+        setFileSelection(null);
         break;
       case 'VARIABLES_DATA':
         variablesResolver.current?.(msg.payload as RawCollection[]);
@@ -417,7 +412,7 @@ export default function App() {
   function saveSettings() {
     postMsg({ type: 'SAVE_SETTINGS', payload: settings });
     setStatus('Settings saved', 'ok');
-    if (settings.token && settings.owner && settings.repo && settings.branch) setTab('push');
+    if (settings.token && settings.owner && settings.repo && settings.branch) setTab('home');
   }
 
   const isConnected = !!settings.token && !!settings.connectedLogin;
@@ -610,7 +605,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Main UI (sync + settings tabs) ── */}
+      {/* ── Main UI (home + sub-screens) ── */}
       {tab !== 'welcome' && (
         <>
           <div className="status-bar">
@@ -618,17 +613,85 @@ export default function App() {
             <span className="status-text">{statusText}</span>
           </div>
 
-          <div className="tabs" ref={tabsRef}>
-            <button className={`tab${tab === 'push' ? ' active' : ''}`} onClick={() => setTab('push')}>Push</button>
-            <button className={`tab${tab === 'pull' ? ' active' : ''}`} onClick={() => setTab('pull')}>Pull</button>
-            <button className={`tab${tab === 'log' ? ' active' : ''}`} onClick={() => setTab('log')}>
-              Log{history.length > 0 ? ` (${history.length})` : ''}
-            </button>
-            <button className={`tab${tab === 'settings' ? ' active' : ''}`} onClick={() => setTab('settings')}>Settings</button>
-            <span className="tab-indicator" ref={indicatorRef} />
-          </div>
+          {/* ── Home screen ── */}
+          {tab === 'home' && (
+            <div className="home-screen">
+              <button className="nav-card nav-card--push" onClick={() => setTab('push')}>
+                <div className="nav-card-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 19V5M5 12l7-7 7 7"/>
+                  </svg>
+                </div>
+                <div className="nav-card-text">
+                  <div className="nav-card-title">Push tokens</div>
+                  <div className="nav-card-sub">Export Figma variables to your repo as JSON</div>
+                </div>
+                <span className="nav-card-arrow">›</span>
+              </button>
 
-          {/* ── Push tab ── */}
+              <button className="nav-card nav-card--pull" onClick={() => setTab('pull')}>
+                <div className="nav-card-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12l7 7 7-7"/>
+                  </svg>
+                </div>
+                <div className="nav-card-text">
+                  <div className="nav-card-title">Pull tokens</div>
+                  <div className="nav-card-sub">Import token JSON from your repo into Figma</div>
+                </div>
+                <span className="nav-card-arrow">›</span>
+              </button>
+
+              <button className="nav-card nav-card--log" onClick={() => setTab('log')}>
+                <div className="nav-card-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                </div>
+                <div className="nav-card-text">
+                  <div className="nav-card-title">History{history.length > 0 ? ` (${history.length})` : ''}</div>
+                  <div className="nav-card-sub">View past push and pull operations</div>
+                </div>
+                <span className="nav-card-arrow">›</span>
+              </button>
+
+              <button className="nav-card nav-card--settings" onClick={() => setTab('settings')}>
+                <div className="nav-card-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  </svg>
+                </div>
+                <div className="nav-card-text">
+                  <div className="nav-card-title">Settings</div>
+                  <div className="nav-card-sub">Manage your repo connection and token path</div>
+                </div>
+                <span className="nav-card-arrow">›</span>
+              </button>
+            </div>
+          )}
+
+          {/* ── Sub-screen header ── */}
+          {tab !== 'home' && (
+            <div className="screen-header">
+              <button className="back-btn" onClick={() => setTab('home')}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5M12 5l-7 7 7 7"/>
+                </svg>
+                Home
+              </button>
+              <span style={{ flex: 1 }} />
+              <span className="screen-header-title">
+                {tab === 'push' && 'Push tokens'}
+                {tab === 'pull' && 'Pull tokens'}
+                {tab === 'log' && 'History'}
+                {tab === 'settings' && 'Settings'}
+              </span>
+            </div>
+          )}
+
+          {/* ── Push screen ── */}
           {tab === 'push' && (
             <div className="panel">
               {!isConnected && (
