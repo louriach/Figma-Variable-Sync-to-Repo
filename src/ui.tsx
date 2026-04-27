@@ -44,14 +44,18 @@ export default function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [dot, setDot] = useState<DotState>('idle');
   const [statusText, setStatusText] = useState('Ready');
-  const [logs, setLogs] = useState<LogLine[]>([]);
+  const [pushLogs, setPushLogs] = useState<LogLine[]>([]);
+  const [pullLogs, setPullLogs] = useState<LogLine[]>([]);
   const [busy, setBusy] = useState(false);
   const [pendingPull, setPendingPull] = useState<{ files: Record<string, TokenFile>; diffs: FileDiff[] } | null>(null);
   const [history, setHistory] = useState<OperationRecord[]>([]);
   const [expandedLog, setExpandedLog] = useState<number | null>(null);
-  const [diffDetail, setDiffDetail] = useState<string | null>(null); // fileName being inspected
+  const [diffDetail, setDiffDetail] = useState<string | null>(null);
   const [fileSelection, setFileSelection] = useState<{ files: Array<{ name: string; path: string }>; selected: Set<string> } | null>(null);
-  const logRef = useRef<HTMLDivElement>(null);
+  const pushLogRef = useRef<HTMLDivElement>(null);
+  const pullLogRef = useRef<HTMLDivElement>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const indicatorRef = useRef<HTMLSpanElement>(null);
 
   const [resetSuccess, setResetSuccess] = useState(false);
   const [patValue, setPatValue] = useState('');
@@ -82,11 +86,26 @@ export default function App() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
-  }, [logs]);
+    if (pushLogRef.current) pushLogRef.current.scrollTop = pushLogRef.current.scrollHeight;
+  }, [pushLogs]);
+  useEffect(() => {
+    if (pullLogRef.current) pullLogRef.current.scrollTop = pullLogRef.current.scrollHeight;
+  }, [pullLogs]);
 
-  const addLog = useCallback((text: string, kind: LogLine['kind'] = 'info') => {
-    setLogs((prev) => [...prev, { text, kind }]);
+  // Slide the tab indicator to the active tab
+  useEffect(() => {
+    if (!tabsRef.current || !indicatorRef.current) return;
+    const activeTab = tabsRef.current.querySelector<HTMLElement>('.tab.active');
+    if (!activeTab) return;
+    indicatorRef.current.style.left = `${activeTab.offsetLeft}px`;
+    indicatorRef.current.style.width = `${activeTab.offsetWidth}px`;
+  }, [tab]);
+
+  const addPushLog = useCallback((text: string, kind: LogLine['kind'] = 'info') => {
+    setPushLogs((prev) => [...prev, { text, kind }]);
+  }, []);
+  const addPullLog = useCallback((text: string, kind: LogLine['kind'] = 'info') => {
+    setPullLogs((prev) => [...prev, { text, kind }]);
   }, []);
 
   const setStatus = useCallback((text: string, state: DotState) => {
@@ -133,11 +152,14 @@ export default function App() {
       case 'HISTORY_DATA':
         setHistory(msg.payload as OperationRecord[]);
         break;
-      case 'ERROR':
-        addLog(String(msg.payload), 'error');
-        setStatus(String(msg.payload), 'error');
+      case 'ERROR': {
+        const errMsg = String(msg.payload);
+        addPushLog(errMsg, 'error');
+        addPullLog(errMsg, 'error');
+        setStatus(errMsg, 'error');
         setBusy(false);
         break;
+      }
     }
   }
 
@@ -241,10 +263,10 @@ export default function App() {
   async function handlePush() {
     if (!validateSettings()) return;
     setBusy(true);
-    setLogs([]);
+    setPushLogs([]);
     setStatus('Reading Figma variables…', 'working');
     const opLines: string[] = [];
-    const log = (text: string, kind: LogLine['kind'] = 'info') => { addLog(text, kind); opLines.push(text); };
+    const log = (text: string, kind: LogLine['kind'] = 'info') => { addPushLog(text, kind); opLines.push(text); };
     try {
       const provider = buildProvider(settings);
       const basePath = normaliseTokensPath(settings.tokensPath);
@@ -256,10 +278,10 @@ export default function App() {
       for (const { fileName, content } of Object.values(tokenFiles)) {
         const filePath = basePath + fileName;
         setStatus(`Pushing ${fileName}…`, 'working');
-        log(`→ ${filePath}`);
+        log(`${filePath}`);
         const existing = await provider.getFile(filePath);
         await provider.putFile(filePath, JSON.stringify(content, null, 2), `chore: sync tokens from Figma (${fileName})`, existing?.sha);
-        log(`✓ ${fileName} pushed`, 'ok');
+        log(`${fileName} pushed`, 'ok');
       }
       log('Done!', 'ok');
       const summary = `Pushed ${Object.keys(tokenFiles).length} file(s) to ${settings.branch}`;
@@ -279,7 +301,7 @@ export default function App() {
   async function handlePull() {
     if (!validateSettings()) return;
     setBusy(true);
-    setLogs([]);
+    setPullLogs([]);
     setPendingPull(null);
     setFileSelection(null);
     setStatus('Listing token files…', 'working');
@@ -288,16 +310,15 @@ export default function App() {
       const basePath = normaliseTokensPath(settings.tokensPath);
       const files = await provider.listFiles(basePath);
       if (files.length === 0) {
-        addLog('No JSON files found at the tokens path.', 'error');
+        addPullLog('No JSON files found at the tokens path.', 'error');
         setStatus('No files found', 'error');
         setBusy(false);
         return;
       }
-      addLog(`Found ${files.length} file(s) — choose which to pull`);
       setFileSelection({ files, selected: new Set(files.map((f) => f.name)) });
       setStatus('Select files to pull', 'idle');
     } catch (e) {
-      addLog(e instanceof Error ? e.message : String(e), 'error');
+      addPullLog(e instanceof Error ? e.message : String(e), 'error');
       setStatus('Pull failed', 'error');
     } finally {
       setBusy(false);
@@ -309,22 +330,22 @@ export default function App() {
     const selectedFiles = fileSelection.files.filter((f) => fileSelection.selected.has(f.name));
     if (selectedFiles.length === 0) return;
     setBusy(true);
-    setLogs([]);
+    setPullLogs([]);
     setPendingPull(null);
     setStatus('Downloading selected files…', 'working');
+    const opLines: string[] = [];
+    const log = (text: string, kind: LogLine['kind'] = 'info') => { addPullLog(text, kind); opLines.push(text); };
     try {
       const provider = buildProvider(settings);
       const remoteFiles: Record<string, TokenFile> = {};
       for (const f of selectedFiles) {
         setStatus(`Downloading ${f.name}…`, 'working');
-        addLog(`← ${f.path}`);
         const fc = await provider.getFile(f.path);
-        if (!fc) { addLog(`  ✗ ${f.name} not found — skipped`, 'error'); continue; }
+        if (!fc) { log(`${f.name} not found — skipped`, 'error'); continue; }
         try {
           remoteFiles[f.name] = JSON.parse(fc.content) as TokenFile;
-          addLog(`✓ ${f.name} downloaded`, 'ok');
         } catch {
-          addLog(`  ✗ ${f.name} is not valid JSON — skipped`, 'error');
+          log(`${f.name} is not valid JSON — skipped`, 'error');
         }
       }
       if (Object.keys(remoteFiles).length === 0) {
@@ -344,7 +365,7 @@ export default function App() {
       setPendingPull({ files: remoteFiles, diffs });
       setStatus('Review changes before applying', 'idle');
     } catch (e) {
-      addLog(e instanceof Error ? e.message : String(e), 'error');
+      log(e instanceof Error ? e.message : String(e), 'error');
       setStatus('Pull failed', 'error');
     } finally {
       setBusy(false);
@@ -356,7 +377,7 @@ export default function App() {
     setBusy(true);
     setStatus('Applying to Figma…', 'working');
     const opLines: string[] = [];
-    const log = (text: string, kind: LogLine['kind'] = 'info') => { addLog(text, kind); opLines.push(text); };
+    const log = (text: string, kind: LogLine['kind'] = 'info') => { addPullLog(text, kind); opLines.push(text); };
     try {
       const collections = tokenFilesToCollections(pendingPull.files);
       const result = await applyVariables(collections);
@@ -386,7 +407,7 @@ export default function App() {
       !settings.branch && 'No branch selected',
     ].filter(Boolean) as string[];
     if (problems.length) {
-      problems.forEach((p) => addLog(p, 'error'));
+      problems.forEach((p) => { addPushLog(p, 'error'); addPullLog(p, 'error'); });
       setStatus(problems[0], 'error');
       return false;
     }
@@ -597,13 +618,14 @@ export default function App() {
             <span className="status-text">{statusText}</span>
           </div>
 
-          <div className="tabs">
+          <div className="tabs" ref={tabsRef}>
             <button className={`tab${tab === 'push' ? ' active' : ''}`} onClick={() => setTab('push')}>Push</button>
             <button className={`tab${tab === 'pull' ? ' active' : ''}`} onClick={() => setTab('pull')}>Pull</button>
             <button className={`tab${tab === 'log' ? ' active' : ''}`} onClick={() => setTab('log')}>
               Log{history.length > 0 ? ` (${history.length})` : ''}
             </button>
             <button className={`tab${tab === 'settings' ? ' active' : ''}`} onClick={() => setTab('settings')}>Settings</button>
+            <span className="tab-indicator" ref={indicatorRef} />
           </div>
 
           {/* ── Push tab ── */}
@@ -612,16 +634,15 @@ export default function App() {
               {!isConnected && (
                 <div className="notice">Connect your repository in <strong>Settings</strong> before syncing.</div>
               )}
-              <div className="sync-card">
-                <h3>Push to {providerLabel}</h3>
-                <p>Export all Figma variable collections to your repo as W3C design token JSON files.</p>
+              <div className="sync-section">
+                <p className="sync-desc">Export all Figma variable collections to your repo as W3C design token JSON files.</p>
                 <button className="btn btn-soft" disabled={busy} onClick={handlePush}>
                   {busy ? 'Working…' : 'Push tokens'}
                 </button>
               </div>
-              {logs.length > 0 && (
-                <div className="log-area" ref={logRef}>
-                  {logs.map((l, i) => (
+              {pushLogs.length > 0 && (
+                <div className="log-area" ref={pushLogRef}>
+                  {pushLogs.map((l, i) => (
                     <div key={i} className={l.kind === 'ok' ? 'log-ok' : l.kind === 'error' ? 'log-error' : ''}>{l.text}</div>
                   ))}
                 </div>
@@ -641,9 +662,8 @@ export default function App() {
               {!isConnected && (
                 <div className="notice">Connect your repository in <strong>Settings</strong> before syncing.</div>
               )}
-              <div className="sync-card">
-                <h3>Pull from {providerLabel}</h3>
-                <p>Import W3C design token JSON files from your repo and create or update Figma variables.</p>
+              <div className="sync-section">
+                <p className="sync-desc">Import W3C design token JSON files from your repo and create or update Figma variables.</p>
                 <button className="btn btn-soft" disabled={busy} onClick={handlePull}>
                   {busy ? 'Working…' : 'Pull tokens'}
                 </button>
@@ -670,7 +690,7 @@ export default function App() {
                     <button className="btn btn-soft" disabled={busy || fileSelection.selected.size === 0} onClick={handleDownloadSelected}>
                       {busy ? 'Downloading…' : 'Download & compare'}
                     </button>
-                    <button className="btn btn-ghost" onClick={() => { setFileSelection(null); setLogs([]); }} disabled={busy}>Cancel</button>
+                    <button className="btn btn-ghost" onClick={() => { setFileSelection(null); setPullLogs([]); }} disabled={busy}>Cancel</button>
                   </div>
                 </div>
               )}
@@ -702,13 +722,13 @@ export default function App() {
                     <button className="btn btn-soft" onClick={handleConfirmPull} disabled={busy}>
                       {busy ? 'Applying…' : 'Apply changes'}
                     </button>
-                    <button className="btn btn-ghost" onClick={() => { setPendingPull(null); setLogs([]); }} disabled={busy}>Cancel</button>
+                    <button className="btn btn-ghost" onClick={() => { setPendingPull(null); setPullLogs([]); }} disabled={busy}>Cancel</button>
                   </div>
                 </div>
               )}
-              {!pendingPull && logs.length > 0 && (
-                <div className="log-area" ref={logRef}>
-                  {logs.map((l, i) => (
+              {!pendingPull && pullLogs.length > 0 && (
+                <div className="log-area" ref={pullLogRef}>
+                  {pullLogs.map((l, i) => (
                     <div key={i} className={l.kind === 'ok' ? 'log-ok' : l.kind === 'error' ? 'log-error' : ''}>{l.text}</div>
                   ))}
                 </div>
@@ -883,7 +903,6 @@ export default function App() {
           <>
             <div className="sheet-scrim" onClick={() => { if (!busy) setDiffDetail(null); }} />
             <div className="sheet">
-              <div className="sheet-handle" />
               <div className="sheet-header">
                 <span className="sheet-title">{d.fileName}</span>
                 <span className="diff-stats">
