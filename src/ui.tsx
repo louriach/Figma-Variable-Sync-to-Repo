@@ -374,6 +374,8 @@ export default function App() {
     const opLines: string[] = [];
     const log = (text: string, kind: LogLine['kind'] = 'info') => { addPullLog(text, kind); opLines.push(text); };
     try {
+      // Snapshot current state before overwriting — used for revert
+      const snapshot = await getVariables();
       const collections = tokenFilesToCollections(pendingPull.files);
       const result = await applyVariables(collections);
       result.log.forEach((l) => { log(l, 'ok'); });
@@ -382,13 +384,36 @@ export default function App() {
       log('Done!', 'ok');
       const summary = `Pulled ${Object.keys(pendingPull.files).length} file(s): ${total} variable(s) across ${collections.length} collection(s)`;
       setStatus('Done', 'ok');
-      saveOperation({ timestamp: Date.now(), type: 'pull', status: result.errors.length > 0 ? 'error' : 'ok', summary, lines: opLines });
+      saveOperation({ timestamp: Date.now(), type: 'pull', status: result.errors.length > 0 ? 'error' : 'ok', summary, lines: opLines, snapshot });
       setPendingPull(null);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       log(msg, 'error');
       setStatus('Pull failed', 'error');
       saveOperation({ timestamp: Date.now(), type: 'pull', status: 'error', summary: 'Pull failed: ' + msg, lines: opLines });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRevert(op: OperationRecord) {
+    if (!op.snapshot) return;
+    setBusy(true);
+    setStatus('Reverting…', 'working');
+    try {
+      const result = await applyVariables(op.snapshot);
+      const d = new Date(op.timestamp);
+      const label = `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      setStatus('Reverted', 'ok');
+      saveOperation({
+        timestamp: Date.now(),
+        type: 'pull',
+        status: result.errors.length > 0 ? 'error' : 'ok',
+        summary: `Reverted to snapshot from ${label}`,
+        lines: result.log,
+      });
+    } catch (e) {
+      setStatus('Revert failed', 'error');
     } finally {
       setBusy(false);
     }
@@ -874,6 +899,17 @@ export default function App() {
                             {op.lines.map((line, j) => (
                               <div key={j} className="log-entry-line">{line}</div>
                             ))}
+                            {op.type === 'pull' && op.snapshot && (
+                              <div className="log-entry-revert">
+                                <button
+                                  className="btn-revert"
+                                  onClick={() => handleRevert(op)}
+                                  disabled={busy}
+                                >
+                                  Revert to this state
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

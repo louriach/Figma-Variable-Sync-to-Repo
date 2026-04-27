@@ -124,6 +124,8 @@ export interface OperationRecord {
   status: 'ok' | 'error';
   summary: string;
   lines: string[];
+  /** Variable state captured immediately before a pull — used for revert */
+  snapshot?: RawCollection[];
 }
 
 // ─── Pull diff ───────────────────────────────────────────────────────────────
