@@ -651,6 +651,38 @@ export default function App() {
                   </div>
                 </div>
               )}
+              {pendingPull && (
+                <div className="file-select-panel">
+                  <div className="diff-header">Review changes</div>
+                  <div className="diff-file-list">
+                    {pendingPull.diffs.map((d) => (
+                      <button
+                        key={d.fileName}
+                        className="diff-file-item"
+                        onClick={() => d.hasChanges && setDiffDetail(d.fileName)}
+                        style={{ cursor: d.hasChanges ? 'pointer' : 'default' }}
+                        disabled={!d.hasChanges}
+                      >
+                        <span className="diff-file-name">{d.fileName}</span>
+                        <span className="diff-stats">
+                          {!d.hasChanges && <span className="diff-none">no changes</span>}
+                          {d.updated > 0 && <span className="diff-updated">{d.updated} updated</span>}
+                          {d.added > 0 && <span className="diff-added">+{d.added}</span>}
+                          {d.removed > 0 && <span className="diff-removed">−{d.removed}</span>}
+                          {d.hasChanges && <span className="diff-arrow">›</span>}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="diff-hint">A Figma version will be auto-saved before applying.</p>
+                  <div className="btn-row" style={{ marginTop: 12 }}>
+                    <button className="btn btn-primary" onClick={handleConfirmPull} disabled={busy}>
+                      {busy ? 'Applying…' : 'Apply changes'}
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => { setPendingPull(null); setLogs([]); }} disabled={busy}>Cancel</button>
+                  </div>
+                </div>
+              )}
               {!pendingPull && logs.length > 0 && (
                 <div className="log-area" ref={logRef}>
                   {logs.map((l, i) => (
@@ -827,91 +859,46 @@ export default function App() {
         </>
       )}
 
-      {/* ── Bottom sheet — diff review only ── */}
-      {pendingPull && (
-        <>
-          <div className="sheet-scrim" onClick={() => {
-            if (!busy) { setPendingPull(null); setDiffDetail(null); setLogs([]); }
-          }} />
-          <div className="sheet">
-            <div className="sheet-handle" />
-
-            {/* Diff summary */}
-            {pendingPull && !diffDetail && (
-              <>
-                <div className="sheet-header">
-                  <span className="sheet-title">Review changes</span>
-                </div>
-                <div className="sheet-body">
-                  <div className="diff-file-list">
-                    {pendingPull.diffs.map((d) => (
-                      <button
-                        key={d.fileName}
-                        className="diff-file-item"
-                        onClick={() => d.hasChanges && setDiffDetail(d.fileName)}
-                        style={{ cursor: d.hasChanges ? 'pointer' : 'default' }}
-                        disabled={!d.hasChanges}
-                      >
-                        <span className="diff-file-name">{d.fileName}</span>
-                        <span className="diff-stats">
-                          {!d.hasChanges && <span className="diff-none">no changes</span>}
-                          {d.updated > 0 && <span className="diff-updated">{d.updated} updated</span>}
-                          {d.added > 0 && <span className="diff-added">+{d.added}</span>}
-                          {d.removed > 0 && <span className="diff-removed">−{d.removed}</span>}
-                          {d.hasChanges && <span className="diff-arrow">›</span>}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                  <p className="diff-hint">A Figma version will be auto-saved before applying.</p>
-                </div>
-                <div className="sheet-footer">
-                  <button className="btn btn-primary" onClick={handleConfirmPull} disabled={busy}>
-                    {busy ? 'Applying…' : 'Apply changes'}
-                  </button>
-                  <button className="btn btn-secondary" onClick={() => { setPendingPull(null); setLogs([]); }} disabled={busy}>Cancel</button>
-                </div>
-              </>
-            )}
-
-            {/* Diff detail */}
-            {pendingPull && diffDetail && (() => {
-              const d = pendingPull.diffs.find((x) => x.fileName === diffDetail)!;
-              return (
-                <>
-                  <div className="sheet-header">
-                    <button className="diff-back" onClick={() => setDiffDetail(null)}>‹ Back</button>
-                    <span className="sheet-title">{d.fileName}</span>
-                  </div>
-                  <div className="sheet-body">
-                    <div className="diff-entries">
-                      {d.entries.map((e, i) => (
-                        <div key={i} className={`diff-entry diff-entry--${e.kind}`}>
-                          <span className="diff-entry-kind">
-                            {e.kind === 'added' ? '+' : e.kind === 'removed' ? '−' : '~'}
-                          </span>
-                          <span className="diff-entry-path">{e.path}</span>
-                          <span className="diff-entry-value">
-                            {e.kind === 'updated' && <><span className="diff-entry-old">{String(e.oldValue)}</span><span className="diff-entry-arrow"> → </span><span className="diff-entry-new">{String(e.newValue)}</span></>}
-                            {e.kind === 'added' && <span className="diff-entry-new">{String(e.newValue)}</span>}
-                            {e.kind === 'removed' && <span className="diff-entry-old">{String(e.oldValue)}</span>}
-                          </span>
-                        </div>
-                      ))}
+      {/* ── Bottom sheet — per-file token detail only ── */}
+      {pendingPull && diffDetail && (() => {
+        const d = pendingPull.diffs.find((x) => x.fileName === diffDetail)!;
+        return (
+          <>
+            <div className="sheet-scrim" onClick={() => { if (!busy) setDiffDetail(null); }} />
+            <div className="sheet">
+              <div className="sheet-handle" />
+              <div className="sheet-header">
+                <span className="sheet-title">{d.fileName}</span>
+                <span className="diff-stats">
+                  {d.updated > 0 && <span className="diff-updated">{d.updated} updated</span>}
+                  {d.added > 0 && <span className="diff-added">+{d.added}</span>}
+                  {d.removed > 0 && <span className="diff-removed">−{d.removed}</span>}
+                </span>
+              </div>
+              <div className="sheet-body">
+                <div className="diff-entries">
+                  {d.entries.map((e, i) => (
+                    <div key={i} className={`diff-entry diff-entry--${e.kind}`}>
+                      <span className="diff-entry-kind">
+                        {e.kind === 'added' ? '+' : e.kind === 'removed' ? '−' : '~'}
+                      </span>
+                      <span className="diff-entry-path">{e.path}</span>
+                      <span className="diff-entry-value">
+                        {e.kind === 'updated' && <><span className="diff-entry-old">{String(e.oldValue)}</span><span className="diff-entry-arrow"> → </span><span className="diff-entry-new">{String(e.newValue)}</span></>}
+                        {e.kind === 'added' && <span className="diff-entry-new">{String(e.newValue)}</span>}
+                        {e.kind === 'removed' && <span className="diff-entry-old">{String(e.oldValue)}</span>}
+                      </span>
                     </div>
-                  </div>
-                  <div className="sheet-footer">
-                    <button className="btn btn-primary" onClick={handleConfirmPull} disabled={busy}>
-                      {busy ? 'Applying…' : 'Apply changes'}
-                    </button>
-                    <button className="btn btn-secondary" onClick={() => setDiffDetail(null)} disabled={busy}>Back to summary</button>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        </>
-      )}
+                  ))}
+                </div>
+              </div>
+              <div className="sheet-footer">
+                <button className="btn btn-secondary" onClick={() => setDiffDetail(null)} disabled={busy}>Close</button>
+              </div>
+            </div>
+          </>
+        );
+      })()}
     </>
   );
 }
