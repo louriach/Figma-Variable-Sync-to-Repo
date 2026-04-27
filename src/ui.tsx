@@ -49,7 +49,7 @@ export default function App() {
   const [pendingPull, setPendingPull] = useState<{ files: Record<string, TokenFile>; diffs: FileDiff[] } | null>(null);
   const [history, setHistory] = useState<OperationRecord[]>([]);
   const [expandedLog, setExpandedLog] = useState<number | null>(null);
-  const [expandedDiff, setExpandedDiff] = useState<string | null>(null);
+  const [diffDetail, setDiffDetail] = useState<string | null>(null); // fileName being inspected
   const [fileSelection, setFileSelection] = useState<{ files: Array<{ name: string; path: string }>; selected: Set<string> } | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
 
@@ -655,53 +655,69 @@ export default function App() {
                   </div>
                 </div>
               )}
-              {pendingPull && (
+              {pendingPull && !diffDetail && (
                 <div className="diff-panel">
-                  <div className="diff-header">Changes from remote</div>
-                  {pendingPull.diffs.map((d) => {
-                    const isOpen = expandedDiff === d.fileName;
-                    return (
-                      <div key={d.fileName}>
-                        <button
-                          className={`diff-file-row${d.hasChanges ? ' diff-file-row--clickable' : ''}`}
-                          onClick={() => d.hasChanges && setExpandedDiff(isOpen ? null : d.fileName)}
-                          style={{ width: '100%', background: 'none', border: 'none', cursor: d.hasChanges ? 'pointer' : 'default', textAlign: 'left', padding: 0 }}
-                        >
-                          <span className="diff-file-name">{d.fileName}</span>
-                          <span className="diff-stats">
-                            {!d.hasChanges && <span className="diff-none">no changes</span>}
-                            {d.updated > 0 && <span className="diff-updated">{d.updated} updated</span>}
-                            {d.added > 0 && <span className="diff-added">+{d.added} added</span>}
-                            {d.removed > 0 && <span className="diff-removed">−{d.removed} removed</span>}
-                            {d.hasChanges && <span className="diff-chevron">{isOpen ? '▲' : '▼'}</span>}
-                          </span>
-                        </button>
-                        {isOpen && (
-                          <div className="diff-entries">
-                            {d.entries.map((e, i) => (
-                              <div key={i} className={`diff-entry diff-entry--${e.kind}`}>
-                                <span className="diff-entry-path">{e.path}</span>
-                                <span className="diff-entry-value">
-                                  {e.kind === 'updated' && (
-                                    <><span className="diff-entry-old">{String(e.oldValue)}</span>{' → '}<span className="diff-entry-new">{String(e.newValue)}</span></>
-                                  )}
-                                  {e.kind === 'added' && <span className="diff-entry-new">{String(e.newValue)}</span>}
-                                  {e.kind === 'removed' && <span className="diff-entry-old">{String(e.oldValue)}</span>}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                  <p className="diff-hint">Before applying, save a version in Figma (Menu → Save to version history) as a restore point.</p>
+                  <div className="diff-header">Review changes</div>
+                  <div className="diff-file-list">
+                    {pendingPull.diffs.map((d) => (
+                      <button
+                        key={d.fileName}
+                        className="diff-file-item"
+                        onClick={() => d.hasChanges && setDiffDetail(d.fileName)}
+                        style={{ cursor: d.hasChanges ? 'pointer' : 'default' }}
+                        disabled={!d.hasChanges}
+                      >
+                        <span className="diff-file-name">{d.fileName}</span>
+                        <span className="diff-stats">
+                          {!d.hasChanges && <span className="diff-none">no changes</span>}
+                          {d.updated > 0 && <span className="diff-updated">{d.updated} updated</span>}
+                          {d.added > 0 && <span className="diff-added">+{d.added}</span>}
+                          {d.removed > 0 && <span className="diff-removed">−{d.removed}</span>}
+                          {d.hasChanges && <span className="diff-arrow">›</span>}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="diff-hint">A Figma version will be auto-saved before applying so you can revert via File › Version history.</p>
                   <div className="btn-row">
                     <button className="btn btn-primary" onClick={handleConfirmPull} disabled={busy}>Apply changes</button>
                     <button className="btn btn-secondary" onClick={() => { setPendingPull(null); setLogs([]); }} disabled={busy}>Cancel</button>
                   </div>
                 </div>
               )}
+
+              {pendingPull && diffDetail && (() => {
+                const d = pendingPull.diffs.find((x) => x.fileName === diffDetail)!;
+                return (
+                  <div className="diff-panel">
+                    <div className="diff-detail-header">
+                      <button className="diff-back" onClick={() => setDiffDetail(null)}>‹ Back</button>
+                      <span className="diff-detail-title">{d.fileName}</span>
+                    </div>
+                    <div className="diff-entries">
+                      {d.entries.map((e, i) => (
+                        <div key={i} className={`diff-entry diff-entry--${e.kind}`}>
+                          <span className="diff-entry-kind diff-entry-kind--${e.kind}">
+                            {e.kind === 'added' ? '+' : e.kind === 'removed' ? '−' : '~'}
+                          </span>
+                          <span className="diff-entry-path">{e.path}</span>
+                          <span className="diff-entry-value">
+                            {e.kind === 'updated' && (
+                              <><span className="diff-entry-old">{String(e.oldValue)}</span><span className="diff-entry-arrow"> → </span><span className="diff-entry-new">{String(e.newValue)}</span></>
+                            )}
+                            {e.kind === 'added' && <span className="diff-entry-new">{String(e.newValue)}</span>}
+                            {e.kind === 'removed' && <span className="diff-entry-old">{String(e.oldValue)}</span>}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="btn-row" style={{ marginTop: 12 }}>
+                      <button className="btn btn-primary" onClick={handleConfirmPull} disabled={busy}>Apply changes</button>
+                      <button className="btn btn-secondary" onClick={() => setDiffDetail(null)} disabled={busy}>Back to summary</button>
+                    </div>
+                  </div>
+                );
+              })()}
               {!pendingPull && logs.length > 0 && (
                 <div className="log-area" ref={logRef}>
                   {logs.map((l, i) => (

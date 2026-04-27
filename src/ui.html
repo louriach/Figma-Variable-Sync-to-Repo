@@ -540,54 +540,99 @@
       color: #999;
       margin-bottom: 8px;
     }
-    .diff-file-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 4px 0;
-      border-bottom: 1px solid #262626;
-      font-size: 11px;
-    }
-    .diff-file-row:last-of-type { border-bottom: none; }
     .diff-file-name { color: #e5e5e5; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 10px; }
-    .diff-stats { display: flex; gap: 8px; }
+    .diff-stats { display: flex; align-items: center; gap: 8px; }
     .diff-none    { color: #555; }
     .diff-updated { color: #60a5fa; }
     .diff-added   { color: #4ade80; }
     .diff-removed { color: #f87171; }
-    .diff-file-row--clickable:hover { background: #1e1e1e; border-radius: 4px; }
-    .diff-chevron { color: #555; font-size: 8px; margin-left: 4px; }
-    .diff-entries {
-      background: #111;
-      border-radius: 4px;
-      margin: 2px 0 4px;
-      padding: 4px 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      max-height: 180px;
-      overflow-y: auto;
-    }
-    .diff-entry {
+    /* ── Diff file list (summary screen) ── */
+    .diff-file-list { display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px; }
+    .diff-file-item {
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
-      gap: 8px;
-      font-size: 10px;
-      padding: 2px 0;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: none;
+      border: none;
+      color: #e5e5e5;
+      font-size: 11px;
+      text-align: left;
+      width: 100%;
+      transition: background .1s;
     }
-    .diff-entry-path {
+    .diff-file-item:not(:disabled):hover { background: #242424; }
+    .diff-file-item:disabled { opacity: .5; }
+    .diff-arrow { color: #555; font-size: 14px; margin-left: 6px; line-height: 1; }
+
+    /* ── Diff detail screen ── */
+    .diff-detail-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .diff-back {
+      background: none;
+      border: none;
+      color: #60a5fa;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 0;
+      flex-shrink: 0;
+    }
+    .diff-back:hover { color: #93c5fd; }
+    .diff-detail-title {
       font-family: 'SF Mono', 'Fira Code', monospace;
-      color: #aaa;
+      font-size: 11px;
+      color: #999;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .diff-entries {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      max-height: 240px;
+      overflow-y: auto;
+      border-radius: 6px;
+      background: #111;
+      padding: 4px;
+    }
+    .diff-entry {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 10px;
+      padding: 4px 6px;
+      border-radius: 4px;
+    }
+    .diff-entry--added   { background: #0d2618; }
+    .diff-entry--removed { background: #2a0d0d; }
+    .diff-entry--updated { background: #1a1a2e; }
+    .diff-entry-kind {
+      font-weight: 700;
+      flex-shrink: 0;
+      width: 10px;
+    }
+    .diff-entry--added   .diff-entry-kind { color: #4ade80; }
+    .diff-entry--removed .diff-entry-kind { color: #f87171; }
+    .diff-entry--updated .diff-entry-kind { color: #60a5fa; }
+    .diff-entry-path {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      color: #aaa;
       flex: 1;
       min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .diff-entry-value { flex-shrink: 0; font-family: 'SF Mono', 'Fira Code', monospace; }
     .diff-entry-old { color: #f87171; text-decoration: line-through; }
     .diff-entry-new { color: #4ade80; }
+    .diff-entry-arrow { color: #555; }
     .diff-hint {
       margin-top: 12px;
       font-size: 11px;
