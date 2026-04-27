@@ -103,6 +103,13 @@ export default function App() {
     setDot(state);
   }, []);
 
+  // Reset status when navigating so it doesn't bleed across tabs
+  const navigateTo = useCallback((t: Tab) => {
+    setDot('idle');
+    setStatusText('Ready');
+    setTab(t);
+  }, []);
+
   const variablesResolver = useRef<((c: RawCollection[]) => void) | null>(null);
   const setVarsResolver = useRef<((r: SetVariablesResult) => void) | null>(null);
 
@@ -639,7 +646,7 @@ export default function App() {
               {tab === 'home' ? (
                 <span className="app-name">Variable Sync</span>
               ) : (
-                <button className="back-btn" onClick={() => setTab('home')}>
+                <button className="back-btn" onClick={() => navigateTo('home')}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M19 12H5M12 5l-7 7 7 7"/>
                   </svg>
@@ -665,7 +672,7 @@ export default function App() {
           {/* ── Home screen ── */}
           {tab === 'home' && (
             <div className="home-screen">
-              <button className="nav-card nav-card--push" onClick={() => setTab('push')}>
+              <button className="nav-card nav-card--push" onClick={() => navigateTo('push')}>
                 <div className="nav-card-icon">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 19V5M5 12l7-7 7 7"/>
@@ -678,7 +685,7 @@ export default function App() {
                 <span className="nav-card-arrow">›</span>
               </button>
 
-              <button className="nav-card nav-card--pull" onClick={() => setTab('pull')}>
+              <button className="nav-card nav-card--pull" onClick={() => navigateTo('pull')}>
                 <div className="nav-card-icon">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 5v14M5 12l7 7 7-7"/>
@@ -691,7 +698,7 @@ export default function App() {
                 <span className="nav-card-arrow">›</span>
               </button>
 
-              <button className="nav-card nav-card--log" onClick={() => setTab('log')}>
+              <button className="nav-card nav-card--log" onClick={() => navigateTo('log')}>
                 <div className="nav-card-icon">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"/>
@@ -705,7 +712,7 @@ export default function App() {
                 <span className="nav-card-arrow">›</span>
               </button>
 
-              <button className="nav-card nav-card--settings" onClick={() => setTab('settings')}>
+              <button className="nav-card nav-card--settings" onClick={() => navigateTo('settings')}>
                 <div className="nav-card-icon">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="3"/>
@@ -727,7 +734,7 @@ export default function App() {
                 </div>
                 <div className="nav-card-text">
                   <div className="nav-card-title" style={{ color: '#ccc' }}>New here?</div>
-                  <div className="nav-card-sub">Browse example token files to get started ↗</div>
+                  <div className="nav-card-sub">Browse example token files to get started</div>
                 </div>
               </button>
             </div>
