@@ -783,16 +783,20 @@ export default function App() {
                       >
                         <span className="diff-file-name">{d.fileName}</span>
                         <span className="diff-stats">
-                          {!d.hasChanges && <span className="diff-none">no changes</span>}
-                          {d.updated > 0 && <span className="diff-updated">{d.updated} updated</span>}
+                          {!d.hasChanges && <span className="diff-none">No changes</span>}
+                          {d.updated > 0 && <span className="diff-updated">{d.updated} {d.updated === 1 ? 'change' : 'changes'}</span>}
                           {d.added > 0 && <span className="diff-added">+{d.added}</span>}
                           {d.removed > 0 && <span className="diff-removed">−{d.removed}</span>}
-                          {d.hasChanges && <span className="diff-arrow"></span>}
+                          {d.hasChanges && (
+                            <svg className="diff-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M9 18l6-6-6-6"/>
+                            </svg>
+                          )}
                         </span>
                       </button>
                     ))}
                   </div>
-                  <p className="diff-hint">A Figma version will be auto-saved before applying.</p>
+                  <p className="diff-hint">A restore point will be saved to Figma version history before applying.</p>
                   <div className="btn-row" style={{ marginTop: 12 }}>
                     <button className="btn btn-page" onClick={handleConfirmPull} disabled={busy}>
                       {busy ? 'Applying…' : 'Apply changes'}
@@ -985,7 +989,7 @@ export default function App() {
               <div className="sheet-header">
                 <span className="sheet-title">{d.fileName}</span>
                 <span className="diff-stats">
-                  {d.updated > 0 && <span className="diff-updated">{d.updated} updated</span>}
+                  {d.updated > 0 && <span className="diff-updated">{d.updated} {d.updated === 1 ? 'change' : 'changes'}</span>}
                   {d.added > 0 && <span className="diff-added">+{d.added}</span>}
                   {d.removed > 0 && <span className="diff-removed">−{d.removed}</span>}
                 </span>
