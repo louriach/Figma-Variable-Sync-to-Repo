@@ -608,9 +608,34 @@ export default function App() {
       {/* ── Main UI (home + sub-screens) ── */}
       {tab !== 'welcome' && (
         <>
-          <div className="status-bar">
-            <div className={`dot ${dot}`} />
-            <span className="status-text">{statusText}</span>
+          {/* ── Unified header ── */}
+          <div className="app-header">
+            <div className="app-header-left">
+              {tab === 'home' ? (
+                <span className="app-name">Variable Sync</span>
+              ) : (
+                <button className="back-btn" onClick={() => setTab('home')}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 12H5M12 5l-7 7 7 7"/>
+                  </svg>
+                  Home
+                </button>
+              )}
+            </div>
+            <div className="app-header-center">
+              {tab !== 'home' && (
+                <span className="screen-title">
+                  {tab === 'push' && 'Push tokens'}
+                  {tab === 'pull' && 'Pull tokens'}
+                  {tab === 'log' && 'History'}
+                  {tab === 'settings' && 'Settings'}
+                </span>
+              )}
+            </div>
+            <div className="app-header-right">
+              <div className={`dot ${dot}`} />
+              <span className="status-text">{statusText}</span>
+            </div>
           </div>
 
           {/* ── Home screen ── */}
@@ -672,37 +697,20 @@ export default function App() {
             </div>
           )}
 
-          {/* ── Sub-screen header ── */}
-          {tab !== 'home' && (
-            <div className="screen-header">
-              <button className="back-btn" onClick={() => setTab('home')}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 12H5M12 5l-7 7 7 7"/>
-                </svg>
-                Home
-              </button>
-              <span style={{ flex: 1 }} />
-              <span className="screen-header-title">
-                {tab === 'push' && 'Push tokens'}
-                {tab === 'pull' && 'Pull tokens'}
-                {tab === 'log' && 'History'}
-                {tab === 'settings' && 'Settings'}
-              </span>
-            </div>
-          )}
-
           {/* ── Push screen ── */}
           {tab === 'push' && (
-            <div className="panel">
+            <div className="panel page--push">
               {!isConnected && (
                 <div className="notice">Connect your repository in <strong>Settings</strong> before syncing.</div>
               )}
-              <div className="sync-section">
-                <p className="sync-title">Push tokens to repo</p>
-                <p className="sync-desc">Export all Figma variable collections to your repo as W3C design token JSON files.</p>
-                <button className="btn btn-soft" disabled={busy} onClick={handlePush}>
-                  {busy ? 'Working…' : 'Push tokens'}
-                </button>
+              <div className="page-card">
+                <div className="sync-section">
+                  <p className="sync-title">Push tokens to repo</p>
+                  <p className="sync-desc">Export all Figma variable collections to your repo as W3C design token JSON files.</p>
+                  <button className="btn btn-page" disabled={busy} onClick={handlePush}>
+                    {busy ? 'Working…' : 'Push tokens'}
+                  </button>
+                </div>
               </div>
               {pushLogs.length > 0 && (
                 <div className="log-area" ref={pushLogRef}>
@@ -711,7 +719,7 @@ export default function App() {
                   ))}
                 </div>
               )}
-              <p className="persist-note" style={{ marginTop: 16 }}>
+              <p className="persist-note">
                 New here?{' '}
                 <button className="btn-link" onClick={() => postMsg({ type: 'OPEN_URL', payload: 'https://github.com/louriach/Figma-Github-token-sync/tree/main/examples' })}>
                   Try the example token files
@@ -720,18 +728,20 @@ export default function App() {
             </div>
           )}
 
-          {/* ── Pull tab ── */}
+          {/* ── Pull screen ── */}
           {tab === 'pull' && (
-            <div className="panel">
+            <div className="panel page--pull">
               {!isConnected && (
                 <div className="notice">Connect your repository in <strong>Settings</strong> before syncing.</div>
               )}
-              <div className="sync-section">
-                <p className="sync-title">Pull tokens from repo</p>
-                <p className="sync-desc">Import W3C design token JSON files from your repo and create or update Figma variables.</p>
-                <button className="btn btn-soft" disabled={busy} onClick={handlePull}>
-                  {busy ? 'Working…' : 'Pull tokens'}
-                </button>
+              <div className="page-card">
+                <div className="sync-section">
+                  <p className="sync-title">Pull tokens from repo</p>
+                  <p className="sync-desc">Import W3C design token JSON files from your repo and create or update Figma variables.</p>
+                  <button className="btn btn-page" disabled={busy} onClick={handlePull}>
+                    {busy ? 'Working…' : 'Pull tokens'}
+                  </button>
+                </div>
               </div>
               {fileSelection && (
                 <div className="file-select-panel">
@@ -752,7 +762,7 @@ export default function App() {
                     </label>
                   ))}
                   <div className="btn-row" style={{ marginTop: 12 }}>
-                    <button className="btn btn-soft" disabled={busy || fileSelection.selected.size === 0} onClick={handleDownloadSelected}>
+                    <button className="btn btn-page" disabled={busy || fileSelection.selected.size === 0} onClick={handleDownloadSelected}>
                       {busy ? 'Downloading…' : 'Download & compare'}
                     </button>
                     <button className="btn btn-ghost" onClick={() => { setFileSelection(null); setPullLogs([]); }} disabled={busy}>Cancel</button>
@@ -784,7 +794,7 @@ export default function App() {
                   </div>
                   <p className="diff-hint">A Figma version will be auto-saved before applying.</p>
                   <div className="btn-row" style={{ marginTop: 12 }}>
-                    <button className="btn btn-soft" onClick={handleConfirmPull} disabled={busy}>
+                    <button className="btn btn-page" onClick={handleConfirmPull} disabled={busy}>
                       {busy ? 'Applying…' : 'Apply changes'}
                     </button>
                     <button className="btn btn-ghost" onClick={() => { setPendingPull(null); setPullLogs([]); }} disabled={busy}>Cancel</button>
@@ -801,14 +811,15 @@ export default function App() {
             </div>
           )}
 
-          {/* ── Log tab ── */}
+          {/* ── Log screen ── */}
           {tab === 'log' && (
-            <div className="panel">
+            <div className="panel page--log">
+              <div className="page-card">
               {history.length === 0 ? (
-                <p className="persist-note" style={{ textAlign: 'center', paddingTop: 24 }}>No operations recorded yet.</p>
+                <p className="persist-note" style={{ textAlign: 'center', paddingTop: 8 }}>No operations recorded yet.</p>
               ) : (
                 <>
-                  <p className="persist-note" style={{ marginBottom: 12 }}>
+                  <p className="persist-note" style={{ marginBottom: 12, marginTop: 0 }}>
                     Before each pull, a Figma version is auto-saved. To revert, open{' '}
                     <button className="btn-link" onClick={() => postMsg({ type: 'OPEN_URL', payload: 'https://help.figma.com/hc/en-us/articles/360038006754' })}>
                       File › Version history ↗
@@ -843,12 +854,14 @@ export default function App() {
                   })}
                 </>
               )}
+              </div>{/* end page-card */}
             </div>
           )}
 
-          {/* ── Settings tab ── */}
+          {/* ── Settings screen ── */}
           {tab === 'settings' && (
-            <div className="panel">
+            <div className="panel page--settings">
+              <div className="page-card">
               <div className="section-title">Provider</div>
               <div className="field">
                 <label>Git Provider</label>
@@ -946,7 +959,7 @@ export default function App() {
                   </div>
 
                   <div className="btn-row">
-                    <button className="btn btn-primary" onClick={saveSettings}>Save settings</button>
+                    <button className="btn btn-page" onClick={saveSettings}>Save settings</button>
                   </div>
                 </>
               )}
@@ -956,6 +969,7 @@ export default function App() {
                 <br />
                 <button className="btn-link" onClick={handleReset}>Reset all saved data</button>
               </div>
+              </div>{/* end page-card */}
             </div>
           )}
         </>
