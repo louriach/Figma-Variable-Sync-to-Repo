@@ -659,7 +659,6 @@ export default function App() {
             </div>
             <div className="app-header-right">
               <div className={`dot ${dot}`} />
-              <span className="status-text">{statusText}</span>
             </div>
           </div>
 
@@ -719,6 +718,18 @@ export default function App() {
                 </div>
                 <span className="nav-card-arrow">›</span>
               </button>
+
+              <button className="nav-card nav-card--info" onClick={() => postMsg({ type: 'OPEN_URL', payload: 'https://github.com/louriach/Figma-Github-token-sync/tree/main/examples' })}>
+                <div className="nav-card-icon" style={{ background: 'rgba(255,255,255,.08)', color: '#999' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                  </svg>
+                </div>
+                <div className="nav-card-text">
+                  <div className="nav-card-title" style={{ color: '#ccc' }}>New here?</div>
+                  <div className="nav-card-sub">Browse example token files to get started ↗</div>
+                </div>
+              </button>
             </div>
           )}
 
@@ -737,6 +748,12 @@ export default function App() {
                   </button>
                 </div>
               </div>
+              {dot !== 'idle' && (
+                <div className={`inline-status${dot === 'ok' ? ' inline-status--ok' : dot === 'error' ? ' inline-status--error' : ' inline-status--working'}`}>
+                  <div className={`dot ${dot}`} />
+                  {statusText}
+                </div>
+              )}
               {pushLogs.length > 0 && (
                 <div className="log-area" ref={pushLogRef}>
                   {pushLogs.map((l, i) => (
@@ -744,12 +761,6 @@ export default function App() {
                   ))}
                 </div>
               )}
-              <p className="persist-note">
-                New here?{' '}
-                <button className="btn-link" onClick={() => postMsg({ type: 'OPEN_URL', payload: 'https://github.com/louriach/Figma-Github-token-sync/tree/main/examples' })}>
-                  Try the example token files
-                </button>
-              </p>
             </div>
           )}
 
@@ -768,6 +779,12 @@ export default function App() {
                   </button>
                 </div>
               </div>
+              {dot !== 'idle' && !fileSelection && !pendingPull && (
+                <div className={`inline-status${dot === 'ok' ? ' inline-status--ok' : dot === 'error' ? ' inline-status--error' : ' inline-status--working'}`}>
+                  <div className={`dot ${dot}`} />
+                  {statusText}
+                </div>
+              )}
               {fileSelection && (
                 <div className="file-select-panel">
                   <div className="diff-header">Select files to pull</div>
@@ -789,7 +806,7 @@ export default function App() {
                   <div className="btn-row" style={{ marginTop: 12 }}>
                     <button className="btn btn-ghost" onClick={() => { setFileSelection(null); setPullLogs([]); }} disabled={busy}>Cancel</button>
                     <button className="btn btn-page" disabled={busy || fileSelection.selected.size === 0} onClick={handleDownloadSelected}>
-                      {busy ? 'Downloading…' : 'Download & compare'}
+                      {busy ? 'Downloading…' : 'Pull collections'}
                     </button>
                   </div>
                 </div>
@@ -855,16 +872,12 @@ export default function App() {
           {tab === 'log' && (
             <div className="panel page--log">
               <div className="page-card">
+                <p className="sync-title">Operation history</p>
+                <p className="sync-desc">Each pull is snapshotted before applying. Expand any entry and use Revert to restore variables to that state.</p>
               {history.length === 0 ? (
-                <p className="persist-note" style={{ textAlign: 'center', paddingTop: 8 }}>No operations recorded yet.</p>
+                <p style={{ fontSize: 12, color: '#aaa', textAlign: 'center', paddingTop: 8 }}>No operations recorded yet.</p>
               ) : (
                 <>
-                  <p className="persist-note" style={{ marginBottom: 12, marginTop: 0 }}>
-                    Before each pull, a Figma version is auto-saved. To revert, open{' '}
-                    <button className="btn-link" onClick={() => postMsg({ type: 'OPEN_URL', payload: 'https://help.figma.com/hc/en-us/articles/360038006754' })}>
-                      File › Version history ↗
-                    </button>
-                  </p>
                   {history.map((op, i) => {
                     const d = new Date(op.timestamp);
                     const label = `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
@@ -1027,12 +1040,14 @@ export default function App() {
                 </>
               )}
 
-              <div className="persist-note">
-                Settings are saved locally in Figma — you won't need to reconnect next time.
-                <br />
-                <button className="btn-link" onClick={handleReset}>Reset all saved data</button>
-              </div>
+              <p className="persist-note">Settings are saved locally in Figma — you won't need to reconnect next time.</p>
               </div>{/* end page-card */}
+
+              <div className="page-card page-card--danger">
+                <p className="sync-title" style={{ color: '#f87171' }}>Reset all saved data</p>
+                <p className="sync-desc">Clears your token, repository, branch, and all history from Figma's local storage. This cannot be undone.</p>
+                <button className="btn btn-danger" onClick={handleReset}>Reset everything</button>
+              </div>
             </div>
           )}
         </>
