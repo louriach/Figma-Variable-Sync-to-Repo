@@ -625,6 +625,32 @@ export default function App() {
                   {busy ? 'Working…' : 'Pull tokens'}
                 </button>
               </div>
+              {fileSelection && (
+                <div className="file-select-panel">
+                  <div className="diff-header">Select files to pull</div>
+                  {fileSelection.files.map((f) => (
+                    <label key={f.name} className="file-select-row">
+                      <input
+                        type="checkbox"
+                        checked={fileSelection.selected.has(f.name)}
+                        onChange={(e) => {
+                          const next = new Set(fileSelection.selected);
+                          if (e.target.checked) next.add(f.name);
+                          else next.delete(f.name);
+                          setFileSelection({ ...fileSelection, selected: next });
+                        }}
+                      />
+                      <span className="diff-file-name">{f.name}</span>
+                    </label>
+                  ))}
+                  <div className="btn-row" style={{ marginTop: 12 }}>
+                    <button className="btn btn-primary" disabled={busy || fileSelection.selected.size === 0} onClick={handleDownloadSelected}>
+                      {busy ? 'Downloading…' : 'Download & compare'}
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => { setFileSelection(null); setLogs([]); }} disabled={busy}>Cancel</button>
+                  </div>
+                </div>
+              )}
               {!pendingPull && logs.length > 0 && (
                 <div className="log-area" ref={logRef}>
                   {logs.map((l, i) => (
@@ -801,46 +827,14 @@ export default function App() {
         </>
       )}
 
-      {/* ── Bottom sheet — file selection & diff review ── */}
-      {(fileSelection || pendingPull) && (
+      {/* ── Bottom sheet — diff review only ── */}
+      {pendingPull && (
         <>
           <div className="sheet-scrim" onClick={() => {
-            if (!busy) { setFileSelection(null); setPendingPull(null); setDiffDetail(null); setLogs([]); }
+            if (!busy) { setPendingPull(null); setDiffDetail(null); setLogs([]); }
           }} />
           <div className="sheet">
             <div className="sheet-handle" />
-
-            {/* File selection */}
-            {fileSelection && !pendingPull && (
-              <>
-                <div className="sheet-header">
-                  <span className="sheet-title">Select files to pull</span>
-                </div>
-                <div className="sheet-body">
-                  {fileSelection.files.map((f) => (
-                    <label key={f.name} className="file-select-row">
-                      <input
-                        type="checkbox"
-                        checked={fileSelection.selected.has(f.name)}
-                        onChange={(e) => {
-                          const next = new Set(fileSelection.selected);
-                          if (e.target.checked) next.add(f.name);
-                          else next.delete(f.name);
-                          setFileSelection({ ...fileSelection, selected: next });
-                        }}
-                      />
-                      <span className="diff-file-name">{f.name}</span>
-                    </label>
-                  ))}
-                </div>
-                <div className="sheet-footer">
-                  <button className="btn btn-primary" disabled={busy || fileSelection.selected.size === 0} onClick={handleDownloadSelected}>
-                    {busy ? 'Downloading…' : 'Download & compare'}
-                  </button>
-                  <button className="btn btn-secondary" onClick={() => { setFileSelection(null); setLogs([]); }} disabled={busy}>Cancel</button>
-                </div>
-              </>
-            )}
 
             {/* Diff summary */}
             {pendingPull && !diffDetail && (
