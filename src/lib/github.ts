@@ -155,27 +155,29 @@ export class GitHubProvider implements GitProvider {
     filePath: string,
     content: string,
     message: string,
-    sha?: string
+    _sha?: string   // ignored — SHA is always fetched fresh to avoid CDN-cached conflicts
   ): Promise<void> {
     const encodedPath = filePath.split('/').map(encodeURIComponent).join('/');
+    const url = `${this.base}/repos/${this.ownerEnc}/${this.repoEnc}/contents/${encodedPath}`;
+
+    // Fetch the current blob SHA with a cache-busting param so we never get a
+    // stale value from GitHub's CDN, which causes 409 conflicts on rapid writes.
+    const cacheBust = `_cb=${Date.now()}`;
+    const shaRes = await fetch(
+      `${url}?ref=${this.branchEnc}&${cacheBust}`,
+      { headers: this.headers() }
+    );
+    const existingSha: string | undefined =
+      shaRes.ok ? (await shaRes.json()).sha : undefined;
+
     const body: Record<string, unknown> = {
       message,
       content: b64Encode(content),
       branch: this.branch,
     };
-    if (sha) body.sha = sha;
+    if (existingSha) body.sha = existingSha;
 
-    const url = `${this.base}/repos/${this.ownerEnc}/${this.repoEnc}/contents/${encodedPath}`;
-    let res = await fetch(url, { method: 'PUT', headers: this.headers(), body: JSON.stringify(body) });
-
-    // 409 = SHA conflict (stale or wrong). Re-fetch the current blob SHA and retry once.
-    if (res.status === 409) {
-      const current = await this.getFile(filePath);
-      if (current?.sha) body.sha = current.sha;
-      else delete body.sha;
-      res = await fetch(url, { method: 'PUT', headers: this.headers(), body: JSON.stringify(body) });
-    }
-
+    const res = await fetch(url, { method: 'PUT', headers: this.headers(), body: JSON.stringify(body) });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: res.statusText }));
       throw new Error(`GitHub put failed: ${res.status} – ${err.message}`);

@@ -305,8 +305,7 @@ export default function App() {
         const filePath = basePath + fileName;
         setStatus(`Pushing ${fileName}…`, 'working');
         log(filePath);
-        const existing = await provider.getFile(filePath);
-        await provider.putFile(filePath, JSON.stringify(content, null, 2), `chore: sync tokens from Figma (${fileName})`, existing?.sha);
+        await provider.putFile(filePath, JSON.stringify(content, null, 2), `chore: sync tokens from Figma (${fileName})`);
         log(`${fileName} pushed`, 'ok');
       }
       log('Done!', 'ok');
