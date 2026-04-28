@@ -18,6 +18,28 @@ import type { GitProvider } from './lib/provider';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+function countTokenFileStats(file: TokenFile): { variables: number; modes: number } {
+  const metadata = file.$metadata as { modes?: string[] } | undefined;
+  const modes = metadata?.modes ?? [];
+  const modeCount = Math.max(modes.length, 1);
+
+  function countLeaves(obj: Record<string, unknown>): number {
+    let n = 0;
+    for (const [k, v] of Object.entries(obj)) {
+      if (k.startsWith('$')) continue;
+      if (v && typeof v === 'object' && '$value' in (v as object)) n++;
+      else if (v && typeof v === 'object') n += countLeaves(v as Record<string, unknown>);
+    }
+    return n;
+  }
+
+  const variables = modeCount > 1
+    ? countLeaves((file[modes[0]] ?? {}) as Record<string, unknown>)
+    : countLeaves(file as unknown as Record<string, unknown>);
+
+  return { variables, modes: modeCount };
+}
+
 function buildProvider(s: Settings): GitProvider {
   if (s.provider === 'gitlab') return new GitLabProvider(s.token, s.owner, s.repo, s.branch);
   if (s.provider === 'bitbucket') return new BitbucketProvider(s.token, s.owner, s.repo, s.branch);
@@ -905,19 +927,23 @@ export default function App() {
                       <>
                         <div className="diff-header">Changes</div>
                         <div className="diff-file-list">
-                          {changed.map((d) => (
-                            <button key={d.fileName} className="diff-file-item" onClick={() => setDiffDetail(d.fileName)}>
-                              <span className="diff-file-name">{d.fileName}</span>
-                              <span className="diff-stats">
-                                {d.updated > 0 && <span className="diff-updated">{d.updated} {d.updated === 1 ? 'change' : 'changes'}</span>}
-                                {d.added > 0 && <span className="diff-added">+{d.added}</span>}
-                                {d.removed > 0 && <span className="diff-removed">−{d.removed}</span>}
-                                <svg className="diff-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M9 18l6-6-6-6"/>
-                                </svg>
-                              </span>
-                            </button>
-                          ))}
+                          {changed.map((d) => {
+                            const stats = pendingPull.files[d.fileName] ? countTokenFileStats(pendingPull.files[d.fileName]) : null;
+                            return (
+                              <button key={d.fileName} className="diff-file-item" onClick={() => setDiffDetail(d.fileName)}>
+                                <span className="diff-file-name">{d.fileName}</span>
+                                <span className="diff-stats">
+                                  {stats && <span className="diff-none">{stats.variables}v · {stats.modes}m</span>}
+                                  {d.updated > 0 && <span className="diff-updated">{d.updated} {d.updated === 1 ? 'change' : 'changes'}</span>}
+                                  {d.added > 0 && <span className="diff-added">+{d.added}</span>}
+                                  {d.removed > 0 && <span className="diff-removed">−{d.removed}</span>}
+                                  <svg className="diff-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M9 18l6-6-6-6"/>
+                                  </svg>
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </>
                     )}
@@ -925,12 +951,18 @@ export default function App() {
                       <>
                         <div className="diff-header" style={{ marginTop: changed.length > 0 ? 12 : 0 }}>No changes</div>
                         <div className="diff-file-list">
-                          {unchanged.map((d) => (
-                            <div key={d.fileName} className="diff-file-item diff-file-item--unchanged">
-                              <span className="diff-file-name">{d.fileName}</span>
-                              <span className="diff-none">Up to date</span>
-                            </div>
-                          ))}
+                          {unchanged.map((d) => {
+                            const stats = pendingPull.files[d.fileName] ? countTokenFileStats(pendingPull.files[d.fileName]) : null;
+                            return (
+                              <div key={d.fileName} className="diff-file-item diff-file-item--unchanged">
+                                <span className="diff-file-name">{d.fileName}</span>
+                                <span className="diff-stats">
+                                  {stats && <span className="diff-none">{stats.variables}v · {stats.modes}m</span>}
+                                  <span className="diff-none">Up to date</span>
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </>
                     )}
