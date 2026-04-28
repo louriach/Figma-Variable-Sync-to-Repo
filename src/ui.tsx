@@ -774,7 +774,26 @@ export default function App() {
                 <div className="notice">Connect your repository in <strong>Settings</strong> before syncing.</div>
               )}
               <div className="page-card">
-                <p className="sync-title">Push tokens to repo</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <p className="sync-title" style={{ marginBottom: 0 }}>Push tokens to repo</p>
+                  {pushSelection && (
+                    <button
+                      className="btn btn-ghost"
+                      style={{ padding: '4px 10px', fontSize: 12 }}
+                      disabled={busy}
+                      onClick={loadPushCollections}
+                      title="Refresh collections from Figma"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                        <path d="M3 21v-5h5"/>
+                      </svg>
+                      Refresh
+                    </button>
+                  )}
+                </div>
                 <p className="sync-desc">Export Figma variable collections to your repo as W3C design token JSON files.</p>
                 {busy && !pushSelection && (
                   <p style={{ fontSize: 12, color: '#aaa' }}>Reading collections…</p>
