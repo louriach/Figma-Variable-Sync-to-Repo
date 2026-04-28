@@ -48,7 +48,7 @@ export default function App() {
   const [pullLogs, setPullLogs] = useState<LogLine[]>([]);
   const [busy, setBusy] = useState(false);
   const [pendingPull, setPendingPull] = useState<{ files: Record<string, TokenFile>; diffs: FileDiff[] } | null>(null);
-  const [pushSelection, setPushSelection] = useState<{ tokenFiles: Record<string, { colId: string; fileName: string; content: TokenFile }>; selected: Set<string> } | null>(null);
+  const [pushSelection, setPushSelection] = useState<{ tokenFiles: Record<string, { colId: string; fileName: string; content: TokenFile; modeCount: number; variableCount: number }>; selected: Set<string> } | null>(null);
   const [history, setHistory] = useState<OperationRecord[]>([]);
   const [expandedLog, setExpandedLog] = useState<number | null>(null);
   const [diffDetail, setDiffDetail] = useState<string | null>(null);
@@ -273,9 +273,11 @@ export default function App() {
     try {
       const collections = await getVariables();
       const raw = collectionsToTokenFiles(collections);
-      const tokenFiles: Record<string, { colId: string; fileName: string; content: TokenFile }> = {};
+      const colMeta = new Map(collections.map((c) => [c.id, { modeCount: c.modes.length, variableCount: c.variables.length }]));
+      const tokenFiles: Record<string, { colId: string; fileName: string; content: TokenFile; modeCount: number; variableCount: number }> = {};
       for (const [colId, { fileName, content }] of Object.entries(raw)) {
-        tokenFiles[colId] = { colId, fileName, content };
+        const meta = colMeta.get(colId) ?? { modeCount: 1, variableCount: 0 };
+        tokenFiles[colId] = { colId, fileName, content, ...meta };
       }
       setPushSelection((prev) => {
         const selected = preserveSelection && prev
@@ -817,6 +819,10 @@ export default function App() {
                           }}
                         />
                         <span className="diff-file-name">{f.fileName}</span>
+                        <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexShrink: 0 }}>
+                          <span className="diff-none">{f.variableCount} {f.variableCount === 1 ? 'variable' : 'variables'}</span>
+                          <span className="diff-none">{f.modeCount} {f.modeCount === 1 ? 'mode' : 'modes'}</span>
+                        </span>
                       </label>
                     ))}
                     <div className="btn-row" style={{ marginTop: 12 }}>
