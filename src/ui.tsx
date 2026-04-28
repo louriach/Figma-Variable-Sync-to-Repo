@@ -312,8 +312,9 @@ export default function App() {
       log('Done!', 'ok');
       const summary = `Pushed ${selected.length} file(s) to ${settings.branch}`;
       setStatus('Done', 'ok');
-      setPushSelection(null);
       saveOperation({ timestamp: Date.now(), type: 'push', status: 'ok', summary, lines: opLines });
+      // Reload the picker so the refresh button stays available
+      await loadPushCollections();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       log(msg, 'error');
