@@ -13,7 +13,7 @@
         "$type": "color"
       },
       "primary-hover": {
-        "$value": "#0052a3",
+        "$value": "{color.blue.700}",
         "$type": "color"
       },
       "primary-subtle": {
