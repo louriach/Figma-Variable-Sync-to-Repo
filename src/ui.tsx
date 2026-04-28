@@ -289,6 +289,7 @@ export default function App() {
 
   // ── Push — auto-load collections when tab opens ──
   async function loadPushCollections(preserveSelection = false) {
+    if (!settings.token || !settings.owner || !settings.repo || !settings.branch) return;
     setBusy(true);
     try {
       const collections = await getVariables();
@@ -352,7 +353,7 @@ export default function App() {
 
   // ── Pull ──
   async function loadPullFiles() {
-    if (!validateSettings()) return;
+    if (!settings.token || !settings.owner || !settings.repo || !settings.branch) return;
     setBusy(true);
     setPullLogs([]);
     setPendingPull(null);
