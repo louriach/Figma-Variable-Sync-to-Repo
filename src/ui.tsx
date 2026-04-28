@@ -131,10 +131,8 @@ export default function App() {
     setDot('idle');
     setStatusText('Ready');
     setTab(t);
-    if (t === 'push') {
-      // Load collections immediately so the picker is ready without an extra button click
-      setTimeout(loadPushCollections, 0);
-    }
+    if (t === 'push') setTimeout(loadPushCollections, 0);
+    if (t === 'pull') setTimeout(loadPullFiles, 0);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const variablesResolver = useRef<((c: RawCollection[]) => void) | null>(null);
@@ -353,28 +351,23 @@ export default function App() {
   }
 
   // ── Pull ──
-  async function handlePull() {
+  async function loadPullFiles() {
     if (!validateSettings()) return;
     setBusy(true);
     setPullLogs([]);
     setPendingPull(null);
     setFileSelection(null);
-    setStatus('Listing token files…', 'working');
     try {
       const provider = buildProvider(settings);
       const basePath = normaliseTokensPath(settings.tokensPath);
       const files = await provider.listFiles(basePath);
       if (files.length === 0) {
         addPullLog('No JSON files found at the tokens path.', 'error');
-        setStatus('No files found', 'error');
-        setBusy(false);
         return;
       }
       setFileSelection({ files, selected: new Set(files.map((f) => f.name)) });
-      setStatus('Select files to pull', 'idle');
     } catch (e) {
       addPullLog(e instanceof Error ? e.message : String(e), 'error');
-      setStatus('Pull failed', 'error');
     } finally {
       setBusy(false);
     }
@@ -878,44 +871,59 @@ export default function App() {
                 <div className="notice">Connect your repository in <strong>Settings</strong> before syncing.</div>
               )}
               <div className="page-card">
-                <div className="sync-section">
-                  <p className="sync-title">Pull tokens from repo</p>
-                  <p className="sync-desc">Import W3C design token JSON files from your repo and create or update Figma variables.</p>
-                  <button className="btn btn-page" disabled={busy} onClick={handlePull}>
-                    {busy ? 'Working…' : 'Pull tokens'}
-                  </button>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <p className="sync-title" style={{ marginBottom: 0 }}>Pull tokens from repo</p>
+                  {fileSelection && !pendingPull && (
+                    <button
+                      className="btn btn-ghost"
+                      style={{ padding: '4px 10px', fontSize: 12 }}
+                      disabled={busy}
+                      onClick={loadPullFiles}
+                      title="Refresh file list from repo"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                        <path d="M3 21v-5h5"/>
+                      </svg>
+                      Refresh
+                    </button>
+                  )}
                 </div>
+                <p className="sync-desc">Import W3C design token JSON files from your repo and create or update Figma variables.</p>
+                {busy && !fileSelection && !pendingPull && (
+                  <p style={{ fontSize: 12, color: '#aaa' }}>Listing files…</p>
+                )}
+                {fileSelection && !pendingPull && (
+                  <>
+                    {fileSelection.files.map((f) => (
+                      <label key={f.name} className="file-select-row">
+                        <input
+                          type="checkbox"
+                          checked={fileSelection.selected.has(f.name)}
+                          onChange={(e) => {
+                            const next = new Set(fileSelection.selected);
+                            if (e.target.checked) next.add(f.name);
+                            else next.delete(f.name);
+                            setFileSelection({ ...fileSelection, selected: next });
+                          }}
+                        />
+                        <span className="diff-file-name">{f.name}</span>
+                      </label>
+                    ))}
+                    <div className="btn-row" style={{ marginTop: 12 }}>
+                      <button className="btn btn-page" disabled={busy || fileSelection.selected.size === 0} onClick={handleDownloadSelected}>
+                        {busy ? 'Downloading…' : 'Review changes'}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
               {dot !== 'idle' && !fileSelection && !pendingPull && (
                 <div className={`inline-status${dot === 'ok' ? ' inline-status--ok' : dot === 'error' ? ' inline-status--error' : ' inline-status--working'}`}>
                   <div className={`dot ${dot}`} />
                   {statusText}
-                </div>
-              )}
-              {fileSelection && (
-                <div className="file-select-panel">
-                  <div className="diff-header">Select files to pull</div>
-                  {fileSelection.files.map((f) => (
-                    <label key={f.name} className="file-select-row">
-                      <input
-                        type="checkbox"
-                        checked={fileSelection.selected.has(f.name)}
-                        onChange={(e) => {
-                          const next = new Set(fileSelection.selected);
-                          if (e.target.checked) next.add(f.name);
-                          else next.delete(f.name);
-                          setFileSelection({ ...fileSelection, selected: next });
-                        }}
-                      />
-                      <span className="diff-file-name">{f.name}</span>
-                    </label>
-                  ))}
-                  <div className="btn-row" style={{ marginTop: 12 }}>
-                    <button className="btn btn-ghost" onClick={() => { setFileSelection(null); setPullLogs([]); }} disabled={busy}>Cancel</button>
-                    <button className="btn btn-page" disabled={busy || fileSelection.selected.size === 0} onClick={handleDownloadSelected}>
-                      {busy ? 'Downloading…' : 'Pull collections'}
-                    </button>
-                  </div>
                 </div>
               )}
               {pendingPull && (() => {
@@ -967,7 +975,6 @@ export default function App() {
                       </>
                     )}
                     <div className="btn-row" style={{ marginTop: 12 }}>
-                      <button className="btn btn-ghost" onClick={() => { setPendingPull(null); setPullLogs([]); }} disabled={busy}>Cancel</button>
                       <button className="btn btn-page" onClick={handleConfirmPull} disabled={busy}>
                         {busy ? 'Applying…' : 'Apply changes'}
                       </button>
