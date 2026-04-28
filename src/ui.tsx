@@ -458,11 +458,13 @@ export default function App() {
   const patDocsUrl =
     settings.provider === 'gitlab' ? 'https://gitlab.com/-/user_settings/personal_access_tokens' :
     settings.provider === 'bitbucket' ? 'https://bitbucket.org/account/settings/app-passwords' :
-    'https://github.com/settings/personal-access-tokens/new';
+    'https://github.com/settings/tokens/new?scopes=repo&description=Figma+Variable+Sync';
   const patHint =
     settings.provider === 'bitbucket'
       ? <>Enter as <code style={{fontFamily:'monospace',fontSize:10}}>username:app_password</code>. Needs Repositories: Read &amp; Write scope. Stored locally in Figma only.{' '}<a href={patDocsUrl} target="_blank" rel="noreferrer">Create app password ↗</a></>
-      : <>Needs Contents: Read &amp; Write scope. Stored locally in Figma only.{' '}<a href={patDocsUrl} target="_blank" rel="noreferrer">Create one ↗</a></>;
+      : settings.provider === 'gitlab'
+      ? <>Needs <code style={{fontFamily:'monospace',fontSize:10}}>api</code> scope. Stored locally in Figma only.{' '}<a href={patDocsUrl} target="_blank" rel="noreferrer">Create one ↗</a></>
+      : <>Use a classic token with <code style={{fontFamily:'monospace',fontSize:10}}>repo</code> scope — fine-grained tokens often block writes. Stored locally in Figma only.{' '}<a href={patDocsUrl} target="_blank" rel="noreferrer">Create one ↗</a></>;
 
   // ─── Render ────────────────────────────────────────────────────────────────
 

@@ -157,6 +157,7 @@ export class GitHubProvider implements GitProvider {
     message: string,
     sha?: string
   ): Promise<void> {
+    const encodedPath = filePath.split('/').map(encodeURIComponent).join('/');
     const body: Record<string, unknown> = {
       message,
       content: b64Encode(content),
@@ -165,7 +166,7 @@ export class GitHubProvider implements GitProvider {
     if (sha) body.sha = sha;
 
     const res = await fetch(
-      `${this.base}/repos/${this.ownerEnc}/${this.repoEnc}/contents/${filePath}`,
+      `${this.base}/repos/${this.ownerEnc}/${this.repoEnc}/contents/${encodedPath}`,
       { method: 'PUT', headers: this.headers(), body: JSON.stringify(body) }
     );
     if (!res.ok) {
