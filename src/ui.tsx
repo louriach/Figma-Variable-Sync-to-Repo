@@ -109,7 +109,11 @@ export default function App() {
     setDot('idle');
     setStatusText('Ready');
     setTab(t);
-  }, []);
+    if (t === 'push') {
+      // Load collections immediately so the picker is ready without an extra button click
+      setTimeout(loadPushCollections, 0);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const variablesResolver = useRef<((c: RawCollection[]) => void) | null>(null);
   const setVarsResolver = useRef<((r: SetVariablesResult) => void) | null>(null);
@@ -263,32 +267,26 @@ export default function App() {
     }
   }
 
-  // ── Push — step 1: read collections and show picker ──
-  async function handlePush() {
-    if (!validateSettings()) return;
+  // ── Push — auto-load collections when tab opens ──
+  async function loadPushCollections() {
     setBusy(true);
-    setPushLogs([]);
     setPushSelection(null);
-    setStatus('Reading Figma variables…', 'working');
     try {
       const collections = await getVariables();
       const raw = collectionsToTokenFiles(collections);
-      // Annotate each entry with its collection ID for selection tracking
       const tokenFiles: Record<string, { colId: string; fileName: string; content: TokenFile }> = {};
       for (const [colId, { fileName, content }] of Object.entries(raw)) {
         tokenFiles[colId] = { colId, fileName, content };
       }
       setPushSelection({ tokenFiles, selected: new Set(Object.keys(tokenFiles)) });
-      setStatus('Select collections to push', 'idle');
     } catch (e) {
       addPushLog(e instanceof Error ? e.message : String(e), 'error');
-      setStatus('Push failed', 'error');
     } finally {
       setBusy(false);
     }
   }
 
-  // ── Push — step 2: push selected collections ──
+  // ── Push — push selected collections ──
   async function handlePushSelected() {
     if (!pushSelection) return;
     const selected = Object.values(pushSelection.tokenFiles).filter((f) => pushSelection.selected.has(f.colId));
@@ -776,47 +774,43 @@ export default function App() {
                 <div className="notice">Connect your repository in <strong>Settings</strong> before syncing.</div>
               )}
               <div className="page-card">
-                <div className="sync-section">
-                  <p className="sync-title">Push tokens to repo</p>
-                  <p className="sync-desc">Export all Figma variable collections to your repo as W3C design token JSON files.</p>
-                  <button className="btn btn-page" disabled={busy} onClick={handlePush}>
-                    {busy ? 'Working…' : 'Push tokens'}
-                  </button>
-                </div>
+                <p className="sync-title">Push tokens to repo</p>
+                <p className="sync-desc">Export Figma variable collections to your repo as W3C design token JSON files.</p>
+                {busy && !pushSelection && (
+                  <p style={{ fontSize: 12, color: '#aaa' }}>Reading collections…</p>
+                )}
+                {pushSelection && (
+                  <>
+                    {Object.values(pushSelection.tokenFiles).map((f) => (
+                      <label key={f.colId} className="file-select-row">
+                        <input
+                          type="checkbox"
+                          checked={pushSelection.selected.has(f.colId)}
+                          onChange={(e) => {
+                            const next = new Set(pushSelection.selected);
+                            if (e.target.checked) next.add(f.colId);
+                            else next.delete(f.colId);
+                            setPushSelection({ ...pushSelection, selected: next });
+                          }}
+                        />
+                        <span className="diff-file-name">{f.fileName}</span>
+                      </label>
+                    ))}
+                    <div className="btn-row" style={{ marginTop: 12 }}>
+                      <button className="btn btn-page" disabled={busy || pushSelection.selected.size === 0} onClick={handlePushSelected}>
+                        {busy ? 'Pushing…' : 'Push collections'}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
-              {dot !== 'idle' && !pushSelection && (
+              {dot !== 'idle' && (
                 <div className={`inline-status${dot === 'ok' ? ' inline-status--ok' : dot === 'error' ? ' inline-status--error' : ' inline-status--working'}`}>
                   <div className={`dot ${dot}`} />
                   {statusText}
                 </div>
               )}
-              {pushSelection && (
-                <div className="file-select-panel">
-                  <div className="diff-header">Select collections to push</div>
-                  {Object.values(pushSelection.tokenFiles).map((f) => (
-                    <label key={f.colId} className="file-select-row">
-                      <input
-                        type="checkbox"
-                        checked={pushSelection.selected.has(f.colId)}
-                        onChange={(e) => {
-                          const next = new Set(pushSelection.selected);
-                          if (e.target.checked) next.add(f.colId);
-                          else next.delete(f.colId);
-                          setPushSelection({ ...pushSelection, selected: next });
-                        }}
-                      />
-                      <span className="diff-file-name">{f.fileName}</span>
-                    </label>
-                  ))}
-                  <div className="btn-row" style={{ marginTop: 12 }}>
-                    <button className="btn btn-ghost" onClick={() => { setPushSelection(null); setPushLogs([]); }} disabled={busy}>Cancel</button>
-                    <button className="btn btn-page" disabled={busy || pushSelection.selected.size === 0} onClick={handlePushSelected}>
-                      {busy ? 'Pushing…' : 'Push collections'}
-                    </button>
-                  </div>
-                </div>
-              )}
-              {!pushSelection && pushLogs.length > 0 && (
+              {pushLogs.length > 0 && (
                 <div className="log-area" ref={pushLogRef}>
                   {pushLogs.map((l, i) => (
                     <div key={i} className={l.kind === 'ok' ? 'log-ok' : l.kind === 'error' ? 'log-error' : ''}>{l.text}</div>
