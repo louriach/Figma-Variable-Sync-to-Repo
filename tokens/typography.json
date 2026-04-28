@@ -1,88 +1,118 @@
 {
   "$metadata": {
-    "collection": "Typography",
-    "modes": ["Light", "Dark"]
+    "collection": "typography",
+    "modes": [
+      "Mobile",
+      "Tablet",
+      "Desktop"
+    ]
   },
-  "Light": {
-    "font-family": {
-      "sans": { "$value": "Inter", "$type": "string" },
-      "mono": { "$value": "JetBrains Mono", "$type": "string" },
-      "serif": { "$value": "Georgia", "$type": "string" }
+  "Mobile": {
+    "heading": {
+      "1": {
+        "$value": "{font.size.2xl}",
+        "$type": "number"
+      },
+      "2": {
+        "$value": "{font.size.xl}",
+        "$type": "number"
+      },
+      "3": {
+        "$value": "{font.size.lg}",
+        "$type": "number"
+      }
     },
-    "font-size": {
-      "xs": { "$value": 11, "$type": "number", "$description": "11px" },
-      "sm": { "$value": 12, "$type": "number", "$description": "12px" },
-      "md": { "$value": 14, "$type": "number", "$description": "14px" },
-      "lg": { "$value": 16, "$type": "number", "$description": "16px" },
-      "xl": { "$value": 18, "$type": "number", "$description": "18px" },
-      "2xl": { "$value": 20, "$type": "number", "$description": "20px" },
-      "3xl": { "$value": 24, "$type": "number", "$description": "24px" },
-      "4xl": { "$value": 30, "$type": "number", "$description": "30px" },
-      "5xl": { "$value": 36, "$type": "number", "$description": "36px" },
-      "6xl": { "$value": 48, "$type": "number", "$description": "48px" }
+    "body": {
+      "default": {
+        "$value": "{font.size.sm}",
+        "$type": "number"
+      },
+      "large": {
+        "$value": "{font.size.md}",
+        "$type": "number"
+      }
     },
-    "font-weight": {
-      "regular": { "$value": 400, "$type": "number" },
-      "medium": { "$value": 500, "$type": "number" },
-      "semibold": { "$value": 600, "$type": "number" },
-      "bold": { "$value": 700, "$type": "number" }
-    },
-    "line-height": {
-      "none": { "$value": 1, "$type": "number" },
-      "tight": { "$value": 1.25, "$type": "number" },
-      "snug": { "$value": 1.375, "$type": "number" },
-      "normal": { "$value": 1.5, "$type": "number" },
-      "relaxed": { "$value": 1.625, "$type": "number" },
-      "loose": { "$value": 2, "$type": "number" }
-    },
-    "letter-spacing": {
-      "tighter": { "$value": -0.05, "$type": "number" },
-      "tight": { "$value": -0.025, "$type": "number" },
-      "normal": { "$value": 0, "$type": "number" },
-      "wide": { "$value": 0.025, "$type": "number" },
-      "wider": { "$value": 0.05, "$type": "number" },
-      "widest": { "$value": 0.1, "$type": "number" }
+    "label": {
+      "default": {
+        "$value": "{font.size.xs}",
+        "$type": "number"
+      },
+      "large": {
+        "$value": "{font.size.sm}",
+        "$type": "number"
+      }
     }
   },
-  "Dark": {
-    "font-family": {
-      "sans": { "$value": "Inter", "$type": "string" },
-      "mono": { "$value": "JetBrains Mono", "$type": "string" },
-      "serif": { "$value": "Georgia", "$type": "string" }
+  "Tablet": {
+    "heading": {
+      "1": {
+        "$value": "{font.size.3xl}",
+        "$type": "number"
+      },
+      "2": {
+        "$value": "{font.size.2xl}",
+        "$type": "number"
+      },
+      "3": {
+        "$value": "{font.size.xl}",
+        "$type": "number"
+      }
     },
-    "font-size": {
-      "xs": { "$value": 11, "$type": "number", "$description": "11px" },
-      "sm": { "$value": 12, "$type": "number", "$description": "12px" },
-      "md": { "$value": 14, "$type": "number", "$description": "14px" },
-      "lg": { "$value": 16, "$type": "number", "$description": "16px" },
-      "xl": { "$value": 18, "$type": "number", "$description": "18px" },
-      "2xl": { "$value": 20, "$type": "number", "$description": "20px" },
-      "3xl": { "$value": 24, "$type": "number", "$description": "24px" },
-      "4xl": { "$value": 30, "$type": "number", "$description": "30px" },
-      "5xl": { "$value": 36, "$type": "number", "$description": "36px" },
-      "6xl": { "$value": 48, "$type": "number", "$description": "48px" }
+    "body": {
+      "default": {
+        "$value": "{font.size.md}",
+        "$type": "number"
+      },
+      "large": {
+        "$value": "{font.size.lg}",
+        "$type": "number"
+      }
     },
-    "font-weight": {
-      "regular": { "$value": 400, "$type": "number" },
-      "medium": { "$value": 500, "$type": "number" },
-      "semibold": { "$value": 600, "$type": "number" },
-      "bold": { "$value": 700, "$type": "number" }
+    "label": {
+      "default": {
+        "$value": "{font.size.sm}",
+        "$type": "number"
+      },
+      "large": {
+        "$value": "{font.size.md}",
+        "$type": "number"
+      }
+    }
+  },
+  "Desktop": {
+    "heading": {
+      "1": {
+        "$value": "{font.size.3xl}",
+        "$type": "number"
+      },
+      "2": {
+        "$value": "{font.size.2xl}",
+        "$type": "number"
+      },
+      "3": {
+        "$value": "{font.size.xl}",
+        "$type": "number"
+      }
     },
-    "line-height": {
-      "none": { "$value": 1, "$type": "number" },
-      "tight": { "$value": 1.25, "$type": "number" },
-      "snug": { "$value": 1.375, "$type": "number" },
-      "normal": { "$value": 1.5, "$type": "number" },
-      "relaxed": { "$value": 1.625, "$type": "number" },
-      "loose": { "$value": 2, "$type": "number" }
+    "body": {
+      "default": {
+        "$value": "{font.size.md}",
+        "$type": "number"
+      },
+      "large": {
+        "$value": "{font.size.lg}",
+        "$type": "number"
+      }
     },
-    "letter-spacing": {
-      "tighter": { "$value": -0.05, "$type": "number" },
-      "tight": { "$value": -0.025, "$type": "number" },
-      "normal": { "$value": 0, "$type": "number" },
-      "wide": { "$value": 0.025, "$type": "number" },
-      "wider": { "$value": 0.05, "$type": "number" },
-      "widest": { "$value": 0.1, "$type": "number" }
+    "label": {
+      "default": {
+        "$value": "{font.size.sm}",
+        "$type": "number"
+      },
+      "large": {
+        "$value": "{font.size.md}",
+        "$type": "number"
+      }
     }
   }
 }
