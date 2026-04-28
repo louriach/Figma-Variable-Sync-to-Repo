@@ -165,10 +165,17 @@ export class GitHubProvider implements GitProvider {
     };
     if (sha) body.sha = sha;
 
-    const res = await fetch(
-      `${this.base}/repos/${this.ownerEnc}/${this.repoEnc}/contents/${encodedPath}`,
-      { method: 'PUT', headers: this.headers(), body: JSON.stringify(body) }
-    );
+    const url = `${this.base}/repos/${this.ownerEnc}/${this.repoEnc}/contents/${encodedPath}`;
+    let res = await fetch(url, { method: 'PUT', headers: this.headers(), body: JSON.stringify(body) });
+
+    // 409 = SHA conflict (stale or wrong). Re-fetch the current blob SHA and retry once.
+    if (res.status === 409) {
+      const current = await this.getFile(filePath);
+      if (current?.sha) body.sha = current.sha;
+      else delete body.sha;
+      res = await fetch(url, { method: 'PUT', headers: this.headers(), body: JSON.stringify(body) });
+    }
+
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: res.statusText }));
       throw new Error(`GitHub put failed: ${res.status} – ${err.message}`);
