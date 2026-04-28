@@ -268,9 +268,8 @@ export default function App() {
   }
 
   // ── Push — auto-load collections when tab opens ──
-  async function loadPushCollections() {
+  async function loadPushCollections(preserveSelection = false) {
     setBusy(true);
-    setPushSelection(null);
     try {
       const collections = await getVariables();
       const raw = collectionsToTokenFiles(collections);
@@ -278,7 +277,12 @@ export default function App() {
       for (const [colId, { fileName, content }] of Object.entries(raw)) {
         tokenFiles[colId] = { colId, fileName, content };
       }
-      setPushSelection({ tokenFiles, selected: new Set(Object.keys(tokenFiles)) });
+      setPushSelection((prev) => {
+        const selected = preserveSelection && prev
+          ? new Set(Object.keys(tokenFiles).filter((id) => prev.selected.has(id)))
+          : new Set(Object.keys(tokenFiles));
+        return { tokenFiles, selected };
+      });
     } catch (e) {
       addPushLog(e instanceof Error ? e.message : String(e), 'error');
     } finally {
@@ -312,8 +316,8 @@ export default function App() {
       const summary = `Pushed ${selected.length} file(s) to ${settings.branch}`;
       setStatus('Done', 'ok');
       saveOperation({ timestamp: Date.now(), type: 'push', status: 'ok', summary, lines: opLines });
-      // Reload the picker so the refresh button stays available
-      await loadPushCollections();
+      // Reload the picker so the refresh button stays available; preserve selection
+      await loadPushCollections(true);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       log(msg, 'error');
@@ -781,7 +785,7 @@ export default function App() {
                       className="btn btn-ghost"
                       style={{ padding: '4px 10px', fontSize: 12 }}
                       disabled={busy}
-                      onClick={loadPushCollections}
+                      onClick={() => loadPushCollections(true)}
                       title="Refresh collections from Figma"
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
