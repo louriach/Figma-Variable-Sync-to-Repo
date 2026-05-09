@@ -112,6 +112,7 @@ export interface RawCollection {
 export interface SetVariablesResult {
   created: number;
   updated: number;
+  removed: number;
   errors: string[];
   log: string[];
 }

@@ -6,10 +6,14 @@ A Figma plugin that bi-directionally syncs your Figma variables to and from a JS
 
 ## Features
 
-- **Push** — export all Figma variable collections to your repo as W3C-compliant JSON
-- **Pull with diff** — see exactly what changed (added / updated / removed) before anything is applied
+- **Push** — choose which variable collections to export; each becomes a JSON file in your repo
+- **Pull with diff** — a single table shows every file with variable count, mode count, and a live diff (added / updated / removed) before anything is applied
+- **Selective sync** — check or uncheck individual files on both push and pull
+- **Variable groups** — Figma group separators (`/`) round-trip correctly as nested JSON objects
 - **Multi-mode support** — Light/Dark (and any other modes) are preserved in the token files
 - **Variable aliases** — same-collection and cross-collection aliases, including chains (A → B → C), round-trip correctly
+- **Automatic version snapshot** — before every pull the plugin saves a named version in Figma so you can revert if needed
+- **Operation history** — view past push/pull operations and revert any pull to its pre-apply state
 - **Auto repo/branch picker** — connect once to browse repos and branches without typing
 - **Branch creation** — if the target branch doesn't exist, the plugin creates it from your default branch on first push
 - **Secure** — your PAT is stored only in Figma's local `clientStorage`, never transmitted anywhere except the provider API over HTTPS
@@ -118,13 +122,11 @@ Settings are saved locally in Figma. You won't need to sign in again.
 
 ### Push (Figma → repo)
 
-Exports every variable collection in the current Figma file as a separate JSON file in your tokens directory. Existing files are updated in place (no duplicate commits).
+Opens a table of all variable collections in the current file. Check or uncheck collections, then click **Push collections** to write each selected collection to its own JSON file in your tokens directory. Existing files are updated in place.
 
 ### Pull (repo → Figma)
 
-Downloads all JSON files from your tokens directory and shows a diff — added, updated, and removed token counts per file — before applying anything. Confirm to proceed, or cancel to leave Figma untouched.
-
-> **Tip:** save a named version in Figma (Menu → Save to version history) before applying a pull as a restore point.
+Opens a table of all JSON files in your tokens directory. For each file you can see the variable count, mode count, and a live diff against your current Figma variables (additions in green, updates in amber, removals in red). Select which files to apply, then click **Update local variables**. The plugin automatically saves a named version in Figma before making any changes — expand any entry in History and click **Revert** to roll back.
 
 ---
 

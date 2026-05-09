@@ -66,17 +66,20 @@ export default function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [dot, setDot] = useState<DotState>('idle');
   const [statusText, setStatusText] = useState('Ready');
+  const [statusTab, setStatusTab] = useState<Tab>('home');
   const [pushLogs, setPushLogs] = useState<LogLine[]>([]);
   const [pullLogs, setPullLogs] = useState<LogLine[]>([]);
   const [busy, setBusy] = useState(false);
-  const [pendingPull, setPendingPull] = useState<{ files: Record<string, TokenFile>; diffs: FileDiff[] } | null>(null);
   const [pushSelection, setPushSelection] = useState<{ tokenFiles: Record<string, { colId: string; fileName: string; content: TokenFile; modeCount: number; variableCount: number }>; selected: Set<string> } | null>(null);
+  const [pullData, setPullData] = useState<{ rows: Array<{ name: string; path: string; content: TokenFile; variables: number; modes: number; diff: FileDiff }>; selected: Set<string> } | null>(null);
   const [history, setHistory] = useState<OperationRecord[]>([]);
   const [expandedLog, setExpandedLog] = useState<number | null>(null);
   const [diffDetail, setDiffDetail] = useState<string | null>(null);
-  const [fileSelection, setFileSelection] = useState<{ files: Array<{ name: string; path: string }>; selected: Set<string> } | null>(null);
   const pushLogRef = useRef<HTMLDivElement>(null);
   const pullLogRef = useRef<HTMLDivElement>(null);
+  const tabRef = useRef<Tab>('welcome');
+  const loadPushCollectionsRef = useRef<(preserveSelection?: boolean) => Promise<void>>(async () => {});
+  const loadPullFilesRef = useRef<() => Promise<void>>(async () => {});
 
   const [resetSuccess, setResetSuccess] = useState(false);
   const [patValue, setPatValue] = useState('');
@@ -124,15 +127,20 @@ export default function App() {
   const setStatus = useCallback((text: string, state: DotState) => {
     setStatusText(text);
     setDot(state);
+    setStatusTab(tabRef.current);
   }, []);
 
-  // Reset status when navigating so it doesn't bleed across tabs
+  // Reset status when navigating so it doesn't bleed across tabs.
+  // Use refs so we always call the latest version of the loader functions
+  // rather than the stale closures captured when navigateTo was first created.
   const navigateTo = useCallback((t: Tab) => {
+    tabRef.current = t;
     setDot('idle');
     setStatusText('Ready');
+    setStatusTab(t);
     setTab(t);
-    if (t === 'push') setTimeout(loadPushCollections, 0);
-    if (t === 'pull') setTimeout(loadPullFiles, 0);
+    if (t === 'push') setTimeout(() => loadPushCollectionsRef.current(), 0);
+    if (t === 'pull') setTimeout(() => loadPullFilesRef.current(), 0);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const variablesResolver = useRef<((c: RawCollection[]) => void) | null>(null);
@@ -165,9 +173,8 @@ export default function App() {
         // clear any sub-screen state
         setPushLogs([]);
         setPullLogs([]);
-        setPendingPull(null);
+        setPullData(null);
         setPushSelection(null);
-        setFileSelection(null);
         break;
       case 'VARIABLES_DATA':
         variablesResolver.current?.(msg.payload as RawCollection[]);
@@ -313,6 +320,8 @@ export default function App() {
     }
   }
 
+  loadPushCollectionsRef.current = loadPushCollections;
+
   // ── Push — push selected collections ──
   async function handlePushSelected() {
     if (!pushSelection) return;
@@ -356,8 +365,7 @@ export default function App() {
     if (!settings.token || !settings.owner || !settings.repo || !settings.branch) return;
     setBusy(true);
     setPullLogs([]);
-    setPendingPull(null);
-    setFileSelection(null);
+    setPullData(null);
     try {
       const provider = buildProvider(settings);
       const basePath = normaliseTokensPath(settings.tokensPath);
@@ -366,7 +374,27 @@ export default function App() {
         addPullLog('No JSON files found at the tokens path.', 'error');
         return;
       }
-      setFileSelection({ files, selected: new Set(files.map((f) => f.name)) });
+      // Download all remote files
+      const remoteFiles: Record<string, TokenFile> = {};
+      for (const f of files) {
+        try {
+          const fc = await provider.getFile(f.path);
+          if (fc) remoteFiles[f.name] = JSON.parse(fc.content) as TokenFile;
+        } catch { /* skip unparseable */ }
+      }
+      // Diff against current local variables in one pass
+      const localCollections = await getVariables();
+      const localFiles = Object.values(collectionsToTokenFiles(localCollections))
+        .reduce<Record<string, TokenFile>>((acc, { fileName, content }) => { acc[fileName] = content; return acc; }, {});
+      const diffs = diffTokenFiles(remoteFiles, localFiles);
+      const rows = files
+        .filter((f) => remoteFiles[f.name])
+        .map((f) => {
+          const stats = countTokenFileStats(remoteFiles[f.name]);
+          const diff = diffs.find((d) => d.fileName === f.name) ?? { fileName: f.name, added: 0, updated: 0, removed: 0, hasChanges: false, entries: [] };
+          return { name: f.name, path: f.path, content: remoteFiles[f.name], ...stats, diff };
+        });
+      setPullData({ rows, selected: new Set(rows.map((r) => r.name)) });
     } catch (e) {
       addPullLog(e instanceof Error ? e.message : String(e), 'error');
     } finally {
@@ -374,72 +402,32 @@ export default function App() {
     }
   }
 
-  async function handleDownloadSelected() {
-    if (!fileSelection) return;
-    const selectedFiles = fileSelection.files.filter((f) => fileSelection.selected.has(f.name));
-    if (selectedFiles.length === 0) return;
+  loadPullFilesRef.current = loadPullFiles;
+
+  async function handleApplySelected() {
+    if (!pullData) return;
+    const selectedRows = pullData.rows.filter((r) => pullData.selected.has(r.name));
+    if (selectedRows.length === 0) return;
     setBusy(true);
     setPullLogs([]);
-    setPendingPull(null);
-    setStatus('Downloading selected files…', 'working');
-    const opLines: string[] = [];
-    const log = (text: string, kind: LogLine['kind'] = 'info') => { addPullLog(text, kind); opLines.push(text); };
-    try {
-      const provider = buildProvider(settings);
-      const remoteFiles: Record<string, TokenFile> = {};
-      for (const f of selectedFiles) {
-        setStatus(`Downloading ${f.name}…`, 'working');
-        const fc = await provider.getFile(f.path);
-        if (!fc) { log(`${f.name} not found — skipped`, 'error'); continue; }
-        try {
-          remoteFiles[f.name] = JSON.parse(fc.content) as TokenFile;
-        } catch {
-          log(`${f.name} is not valid JSON — skipped`, 'error');
-        }
-      }
-      if (Object.keys(remoteFiles).length === 0) {
-        setStatus('No valid files found', 'error');
-        setBusy(false);
-        return;
-      }
-      setStatus('Comparing with local variables…', 'working');
-      const localCollections = await getVariables();
-      const localFiles = Object.values(collectionsToTokenFiles(localCollections))
-        .reduce<Record<string, TokenFile>>((acc, { fileName, content }) => {
-          acc[fileName] = content;
-          return acc;
-        }, {});
-      const diffs = diffTokenFiles(remoteFiles, localFiles);
-      setFileSelection(null);
-      setPendingPull({ files: remoteFiles, diffs });
-      setStatus('Review changes before applying', 'idle');
-    } catch (e) {
-      log(e instanceof Error ? e.message : String(e), 'error');
-      setStatus('Pull failed', 'error');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleConfirmPull() {
-    if (!pendingPull) return;
-    setBusy(true);
     setStatus('Applying to Figma…', 'working');
     const opLines: string[] = [];
     const log = (text: string, kind: LogLine['kind'] = 'info') => { addPullLog(text, kind); opLines.push(text); };
     try {
+      const remoteFiles = selectedRows.reduce<Record<string, TokenFile>>((acc, r) => { acc[r.name] = r.content; return acc; }, {});
       // Snapshot current state before overwriting — used for revert
       const snapshot = await getVariables();
-      const collections = tokenFilesToCollections(pendingPull.files);
+      const collections = tokenFilesToCollections(remoteFiles);
       const result = await applyVariables(collections);
       result.log.forEach((l) => { log(l, 'ok'); });
       result.errors.forEach((e) => { log(`  ⚠ ${e}`, 'error'); });
       const total = result.created + result.updated;
       log('Done!', 'ok');
-      const summary = `Pulled ${Object.keys(pendingPull.files).length} file(s): ${total} variable(s) across ${collections.length} collection(s)`;
+      const summary = `Pulled ${selectedRows.length} file(s): ${total} variable(s) across ${collections.length} collection(s)`;
       setStatus('Done', 'ok');
       saveOperation({ timestamp: Date.now(), type: 'pull', status: result.errors.length > 0 ? 'error' : 'ok', summary, lines: opLines, snapshot });
-      setPendingPull(null);
+      // Reload so the table reflects the new state
+      loadPullFilesRef.current();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       log(msg, 'error');
@@ -471,21 +459,6 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }
-
-  function validateSettings(): boolean {
-    const problems = [
-      !settings.token  && 'Not connected — add your token in Settings',
-      !settings.owner  && 'No repository selected',
-      !settings.repo   && 'No repository selected',
-      !settings.branch && 'No branch selected',
-    ].filter(Boolean) as string[];
-    if (problems.length) {
-      problems.forEach((p) => { addPushLog(p, 'error'); addPullLog(p, 'error'); });
-      setStatus(problems[0], 'error');
-      return false;
-    }
-    return true;
   }
 
   function saveSettings() {
@@ -526,13 +499,6 @@ export default function App() {
             {resetSuccess && (
               <div className="welcome-reset-banner">All saved data cleared.</div>
             )}
-
-            <div className="welcome-visual">
-              <div className="welcome-video">
-                <div className="welcome-play" />
-              </div>
-              <span className="welcome-video-label">Video walkthrough · coming soon</span>
-            </div>
 
             <div className="welcome-text">
               <p className="welcome-lead">Sync Figma variables to</p>
@@ -796,60 +762,48 @@ export default function App() {
                 <div className="notice">Connect your repository in <strong>Settings</strong> before syncing.</div>
               )}
               <div className="page-card">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <p className="sync-title" style={{ marginBottom: 0 }}>Push tokens to repo</p>
-                  {pushSelection && (
-                    <button
-                      className="btn btn-ghost"
-                      style={{ padding: '4px 10px', fontSize: 12 }}
-                      disabled={busy}
-                      onClick={() => loadPushCollections(true)}
-                      title="Refresh collections from Figma"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                        <path d="M21 3v5h-5"/>
-                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                        <path d="M3 21v-5h5"/>
-                      </svg>
-                      Refresh
-                    </button>
-                  )}
-                </div>
+                <p className="sync-title">Push tokens to repo</p>
                 <p className="sync-desc">Export Figma variable collections to your repo as W3C design token JSON files.</p>
                 {busy && !pushSelection && (
-                  <p style={{ fontSize: 12, color: '#aaa' }}>Reading collections…</p>
+                  <p style={{ fontSize: 12, color: '#aaa', marginTop: 16 }}>Reading collections…</p>
                 )}
                 {pushSelection && (
-                  <>
-                    {Object.values(pushSelection.tokenFiles).map((f) => (
-                      <label key={f.colId} className="file-select-row">
-                        <input
-                          type="checkbox"
-                          checked={pushSelection.selected.has(f.colId)}
-                          onChange={(e) => {
-                            const next = new Set(pushSelection.selected);
-                            if (e.target.checked) next.add(f.colId);
-                            else next.delete(f.colId);
-                            setPushSelection({ ...pushSelection, selected: next });
-                          }}
-                        />
-                        <span className="diff-file-name">{f.fileName}</span>
-                        <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexShrink: 0 }}>
-                          <span className="diff-none">{f.variableCount} {f.variableCount === 1 ? 'variable' : 'variables'}</span>
-                          <span className="diff-none">{f.modeCount} {f.modeCount === 1 ? 'mode' : 'modes'}</span>
-                        </span>
-                      </label>
-                    ))}
-                    <div className="btn-row" style={{ marginTop: 12 }}>
+                  <div style={{ marginTop: 16 }}>
+                    <div className="pull-table">
+                      <div className="pull-table-head" style={{ gridTemplateColumns: '16px 1fr 48px 48px' }}>
+                        <span></span>
+                        <span>File</span>
+                        <span>Variables</span>
+                        <span>Modes</span>
+                      </div>
+                      {Object.values(pushSelection.tokenFiles).map((f) => (
+                        <label key={f.colId} className="pull-table-row" style={{ gridTemplateColumns: '16px 1fr 48px 48px' }}>
+                          <input
+                            type="checkbox"
+                            checked={pushSelection.selected.has(f.colId)}
+                            onChange={(e) => {
+                              const next = new Set(pushSelection.selected);
+                              if (e.target.checked) next.add(f.colId);
+                              else next.delete(f.colId);
+                              setPushSelection({ ...pushSelection, selected: next });
+                            }}
+                          />
+                          <span className="pull-table-name">{f.fileName}</span>
+                          <span className="pull-table-stat">{f.variableCount}</span>
+                          <span className="pull-table-stat">{f.modeCount}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="btn-row" style={{ marginTop: 12, justifyContent: 'space-between' }}>
+                      <button className="btn btn-ghost" disabled={busy} onClick={() => loadPushCollections(true)}>Refresh</button>
                       <button className="btn btn-page" disabled={busy || pushSelection.selected.size === 0} onClick={handlePushSelected}>
                         {busy ? 'Pushing…' : 'Push collections'}
                       </button>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
-              {dot !== 'idle' && (
+              {dot !== 'idle' && statusTab === 'push' && (
                 <div className={`inline-status${dot === 'ok' ? ' inline-status--ok' : dot === 'error' ? ' inline-status--error' : ' inline-status--working'}`}>
                   <div className={`dot ${dot}`} />
                   {statusText}
@@ -871,119 +825,74 @@ export default function App() {
               {!isConnected && (
                 <div className="notice">Connect your repository in <strong>Settings</strong> before syncing.</div>
               )}
-              <div className="page-card">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <p className="sync-title" style={{ marginBottom: 0 }}>Pull tokens from repo</p>
-                  {fileSelection && !pendingPull && (
-                    <button
-                      className="btn btn-ghost"
-                      style={{ padding: '4px 10px', fontSize: 12 }}
-                      disabled={busy}
-                      onClick={loadPullFiles}
-                      title="Refresh file list from repo"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                        <path d="M21 3v5h-5"/>
-                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                        <path d="M3 21v-5h5"/>
-                      </svg>
-                      Refresh
-                    </button>
-                  )}
-                </div>
-                <p className="sync-desc">Import W3C design token JSON files from your repo and create or update Figma variables.</p>
-                {busy && !fileSelection && !pendingPull && (
-                  <p style={{ fontSize: 12, color: '#aaa' }}>Listing files…</p>
+              <div className="page-card" style={!pullData && !busy ? { paddingBottom: 0 } : undefined}>
+                <p className="sync-title">Pull tokens from repo</p>
+                <p className="sync-desc" style={!pullData && !busy ? { marginBottom: 0 } : undefined}>Import W3C design token JSON files from your repo and create or update Figma variables.</p>
+                {busy && !pullData && (
+                  <p style={{ fontSize: 12, color: '#aaa', marginTop: 16 }}>Loading…</p>
                 )}
-                {fileSelection && !pendingPull && (
-                  <>
-                    {fileSelection.files.map((f) => (
-                      <label key={f.name} className="file-select-row">
-                        <input
-                          type="checkbox"
-                          checked={fileSelection.selected.has(f.name)}
-                          onChange={(e) => {
-                            const next = new Set(fileSelection.selected);
-                            if (e.target.checked) next.add(f.name);
-                            else next.delete(f.name);
-                            setFileSelection({ ...fileSelection, selected: next });
-                          }}
-                        />
-                        <span className="diff-file-name">{f.name}</span>
-                      </label>
-                    ))}
-                    <div className="btn-row" style={{ marginTop: 12 }}>
-                      <button className="btn btn-page" disabled={busy || fileSelection.selected.size === 0} onClick={handleDownloadSelected}>
-                        {busy ? 'Downloading…' : 'Review changes'}
+                {pullData && (
+                  <div style={{ marginTop: 16 }}>
+                    <div className="pull-table">
+                      <div className="pull-table-head">
+                        <span></span>
+                        <span>File</span>
+                        <span>Variables</span>
+                        <span>Modes</span>
+                        <span>Diff</span>
+                      </div>
+                      {pullData.rows.map((row) => {
+                        const hasChanges = row.diff.hasChanges;
+                        const totalChanges = row.diff.added + row.diff.updated + row.diff.removed;
+                        return (
+                          <label key={row.name} className="pull-table-row">
+                            <input
+                              type="checkbox"
+                              checked={pullData.selected.has(row.name)}
+                              onChange={(e) => {
+                                const next = new Set(pullData.selected);
+                                if (e.target.checked) next.add(row.name);
+                                else next.delete(row.name);
+                                setPullData({ ...pullData, selected: next });
+                              }}
+                            />
+                            <span className="pull-table-name">{row.name}</span>
+                            <span className="pull-table-stat">{row.variables}</span>
+                            <span className="pull-table-stat">{row.modes}</span>
+                            <span className="pull-table-changes">
+                              {hasChanges ? (
+                                <button
+                                  className="pull-changes-btn"
+                                  onClick={(e) => { e.preventDefault(); setDiffDetail(row.name); }}
+                                >
+                                  {row.diff.added > 0 && <span className="diff-added">+{row.diff.added}</span>}
+                                  {row.diff.updated > 0 && <span className="diff-updated">~{row.diff.updated}</span>}
+                                  {row.diff.removed > 0 && <span className="diff-removed">−{row.diff.removed}</span>}
+                                </button>
+                              ) : (
+                                <span className="pull-uptodate">✓</span>
+                              )}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <div className="btn-row" style={{ marginTop: 12, justifyContent: 'space-between' }}>
+                      <button className="btn btn-ghost" disabled={busy} onClick={loadPullFiles}>Refresh</button>
+                      <button className="btn btn-page" disabled={busy || pullData.selected.size === 0} onClick={handleApplySelected}>
+                        {busy ? 'Updating…' : 'Update local variables'}
                       </button>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
-              {dot !== 'idle' && !fileSelection && !pendingPull && (
+              {dot !== 'idle' && statusTab === 'pull' && !pullData && (
                 <div className={`inline-status${dot === 'ok' ? ' inline-status--ok' : dot === 'error' ? ' inline-status--error' : ' inline-status--working'}`}>
                   <div className={`dot ${dot}`} />
                   {statusText}
                 </div>
               )}
-              {pendingPull && (() => {
-                const changed   = pendingPull.diffs.filter((d) => d.hasChanges);
-                const unchanged = pendingPull.diffs.filter((d) => !d.hasChanges);
-                return (
-                  <div className="file-select-panel">
-                    {changed.length > 0 && (
-                      <>
-                        <div className="diff-header">Changes</div>
-                        <div className="diff-file-list">
-                          {changed.map((d) => {
-                            const stats = pendingPull.files[d.fileName] ? countTokenFileStats(pendingPull.files[d.fileName]) : null;
-                            return (
-                              <button key={d.fileName} className="diff-file-item" onClick={() => setDiffDetail(d.fileName)}>
-                                <span className="diff-file-name">{d.fileName}</span>
-                                <span className="diff-stats">
-                                  {stats && <span className="diff-none">{stats.variables}v · {stats.modes}m</span>}
-                                  {d.updated > 0 && <span className="diff-updated">{d.updated} {d.updated === 1 ? 'change' : 'changes'}</span>}
-                                  {d.added > 0 && <span className="diff-added">+{d.added}</span>}
-                                  {d.removed > 0 && <span className="diff-removed">−{d.removed}</span>}
-                                  <svg className="diff-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M9 18l6-6-6-6"/>
-                                  </svg>
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </>
-                    )}
-                    {unchanged.length > 0 && (
-                      <>
-                        <div className="diff-header" style={{ marginTop: changed.length > 0 ? 12 : 0 }}>No changes</div>
-                        <div className="diff-file-list">
-                          {unchanged.map((d) => {
-                            const stats = pendingPull.files[d.fileName] ? countTokenFileStats(pendingPull.files[d.fileName]) : null;
-                            return (
-                              <div key={d.fileName} className="diff-file-item diff-file-item--unchanged">
-                                <span className="diff-file-name">{d.fileName}</span>
-                                <span className="diff-stats">
-                                  {stats && <span className="diff-none">{stats.variables}v · {stats.modes}m</span>}
-                                  <span className="diff-none">Up to date</span>
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </>
-                    )}
-                    <div className="btn-row" style={{ marginTop: 12 }}>
-                      <button className="btn btn-page" onClick={handleConfirmPull} disabled={busy}>
-                        {busy ? 'Applying…' : 'Apply changes'}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
-              {!pendingPull && pullLogs.length > 0 && (
+              {pullLogs.length > 0 && (
                 <div className="log-area" ref={pullLogRef}>
                   {pullLogs.map((l, i) => (
                     <div key={i} className={l.kind === 'ok' ? 'log-ok' : l.kind === 'error' ? 'log-error' : ''}>{l.text}</div>
@@ -1179,8 +1088,9 @@ export default function App() {
       )}
 
       {/* ── Bottom sheet — per-file token detail only ── */}
-      {pendingPull && diffDetail && (() => {
-        const d = pendingPull.diffs.find((x) => x.fileName === diffDetail)!;
+      {pullData && diffDetail && (() => {
+        const d = pullData.rows.find((r) => r.name === diffDetail)?.diff;
+        if (!d) return null;
         return (
           <>
             <div className="sheet-scrim" onClick={() => { if (!busy) setDiffDetail(null); }} />

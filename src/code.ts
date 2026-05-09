@@ -63,7 +63,7 @@ async function readVariables(): Promise<RawCollection[]> {
 async function applyVariables(
   collections: RawCollection[]
 ): Promise<SetVariablesResult> {
-  const result: SetVariablesResult = { created: 0, updated: 0, errors: [], log: [] };
+  const result: SetVariablesResult = { created: 0, updated: 0, removed: 0, errors: [], log: [] };
 
   const existingCollections = await figma.variables.getLocalVariableCollectionsAsync();
   const existingVariables = await figma.variables.getLocalVariablesAsync();
@@ -131,7 +131,9 @@ async function applyVariables(
       if (localId) remoteModeIdToLocal.set(rawMode.modeId, localId);
     }
 
-    let colCreated = 0, colUpdated = 0;
+    let colCreated = 0, colUpdated = 0, colRemoved = 0;
+    const incomingVarNames = new Set(rawCol.variables.map((v) => v.name));
+
     for (const rawVar of rawCol.variables) {
       const figmaType: VariableResolvedDataType =
         rawVar.resolvedType === 'COLOR' ? 'COLOR' :
@@ -160,8 +162,24 @@ async function applyVariables(
       importedIdToFigmaId.set(rawVar.id, variable.id);
     }
 
+    // Remove variables that no longer exist in the incoming data
+    for (const [key, variable] of varByKey.entries()) {
+      if (!key.startsWith(`${col.id}::`)) continue;
+      if (!incomingVarNames.has(variable.name)) {
+        try {
+          variable.remove();
+          varByKey.delete(key);
+          result.updated--;  // undo the increment from pass 1 — this var is removed, not updated
+          result.removed++;
+          colRemoved++;
+        } catch (e) {
+          result.errors.push(`Remove "${variable.name}": ${e}`);
+        }
+      }
+    }
+
     result.log.push(
-      `${isNewCollection ? '✦' : '↻'} ${rawCol.name}: ${colCreated} created, ${colUpdated} updated`
+      `${isNewCollection ? '✦' : '↻'} ${rawCol.name}: ${colCreated} created, ${colUpdated} updated${colRemoved > 0 ? `, ${colRemoved} removed` : ''}`
     );
     contexts.push({ col, remoteModeIdToLocal, rawVars: rawCol.variables, colName: rawCol.name });
   }
