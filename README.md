@@ -84,7 +84,7 @@ Aliases between variables are stored as W3C references:
 
 ### 1. Install the plugin
 
-Find **Variable Sync to Repo** in the [Figma Community](https://www.figma.com/community) and click **Install**.
+Find **Variable Sync to Repo** in the [Figma Community]([https://www.figma.com/community](https://www.figma.com/community/plugin/1634946014443748648)) and click **Install**.
 
 ### 2. Create a personal access token
 
